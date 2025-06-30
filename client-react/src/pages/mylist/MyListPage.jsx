@@ -172,7 +172,7 @@ const MyListPage = () => {
             ) : profileError ? (
               <h1 className="profile-name">오류</h1>
             ) : (
-              <h1 className="profile-name">{profile.nickname}</h1>
+              <h1 className="profile-name">소금 님</h1>
             )}
             <p className="profile-join-date">
               {profileLoading

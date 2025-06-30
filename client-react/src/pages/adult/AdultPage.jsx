@@ -121,7 +121,7 @@ const AdultPage = () => {
               <line x1="12" y1="9" x2="12" y2="13"></line>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
-            <span className="notice-text">✅ 성인 인증 완료 - 19세 이상 전용 콘텐츠</span>
+            <span className="notice-text">성인 인증 완료 - 19세 이상 전용 콘텐츠</span>
           </div>
         </div>
       </div>
