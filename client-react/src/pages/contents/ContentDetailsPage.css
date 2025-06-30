@@ -43,6 +43,9 @@
 
 .content-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .content-meta {
@@ -50,6 +53,7 @@
   align-items: center;
   gap: 0.5rem;
   margin: 1rem 0;
+  flex-wrap: wrap;
 }
 
 .meta-divider {
@@ -64,7 +68,8 @@
 .content-actions {
   display: flex;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: auto;
+  padding-top: 2rem;
 }
 
 .play-button {
@@ -110,8 +115,31 @@
   border-radius: 8px;
 }
 
+.series-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 .series-info h1 {
+  font-size: 2.2rem;
+  font-weight: bold;
   margin-bottom: 0.5rem;
+}
+
+.series-meta,
+.series-actors {
+  max-width: 100%;
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
+  flex-wrap: wrap;
+}
+
+.series-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 2rem;
 }
 
 /* 에피소드 리스트 */

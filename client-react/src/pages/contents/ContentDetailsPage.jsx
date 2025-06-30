@@ -207,7 +207,6 @@ const ContentDetailsPage = () => {
 
     return (
       <div className="content-details-page series-mode">
-        {/* 시리즈 콘텐츠 상단 */}
         <div className="series-header">
           <div className="series-poster">
             <img src={seriesInfo.poster_path} alt={seriesInfo.super_asset_nm} />
@@ -218,19 +217,21 @@ const ContentDetailsPage = () => {
               <span>{String(seriesInfo.rlse_year).slice(0, 4)}</span>
               <span className="meta-divider">•</span>
               <span>{seriesInfo.genre}</span>
-              <span className="meta-divider">•</span>
-              <span>{seriesInfo.asset_time}분</span>
             </div>
             <div className="series-actors">
               <span>출연: {seriesInfo.actr_disp}</span>
             </div>
-            <button className="add-list-button" onClick={handleWish} disabled={wishLoading}>
-              <i className="add-icon">{isWish ? '✔' : '+'}</i> {isWish ? '찜 해제' : '찜하기'}
-            </button>
+            <div className="series-actions">
+              <button className="play-button">
+                <i className="play-icon">▶</i> 재생
+              </button>
+              <button className="add-list-button" onClick={handleWish} disabled={wishLoading}>
+                <i className="add-icon">{isWish ? '✔' : '+'}</i> {isWish ? '찜 해제' : '찜하기'}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* 에피소드 리스트 */}
         <div className="episode-list-wrapper">
           <div className="episode-list-section">
             <h2>에피소드</h2>
@@ -248,7 +249,6 @@ const ContentDetailsPage = () => {
                 </div>
               ))}
             </div>
-
             {totalPages > 1 && (
               <div className="episode-pagination">
                 {Array.from({ length: totalPages }, (_, idx) => (
@@ -265,7 +265,6 @@ const ContentDetailsPage = () => {
           </div>
         </div>
 
-        {/* 하단 추천 섹션 */}
         {productList.length > 0 && (
           <SliderSection
             id="commerce-slider"
