@@ -19,6 +19,13 @@ import { mapCsvItemToHero } from "../../utils/mapCsvItemToHero";
  */
 const DramaPage = () => {
   const location = useLocation();
+  const userId = getCurrentUserId();
+
+  const emotionTitleMessage =
+    (userId === 541 && "소금님, 오늘은 마음 속 답답함을 시원하게 풀어줄 액션이나 무협 한 편 어떠세요? 거친 전투 속 통쾌함이 기분 전환에 딱일 거예요!") ||
+    (userId === 436971 && "처드님, 오늘도 멋진 하루 보내고 계시죠? 감정이 벅차오를 땐 몰입감 넘치는 드라마나 짜릿한 액션, 무협으로 힐링해보세요!") ||
+    (userId === 449791 && "미애님, 오늘 마음이 싱숭생숭하다면 여러 장르 중 스릴 넘치는 액션이나 판타지로 기분 전환 어때요? 새로운 세계가 기다리고 있을 거예요!") ||
+    "오늘도 좋은 하루 되세요!";
   const [heroData, setHeroData] = useState([]);
   const [slidersData, setSlidersData] = useState({
     popular: [],
@@ -139,19 +146,19 @@ const DramaPage = () => {
           {/* 1. Top 10 인기 드라마 슬라이더 */}
           <SliderSection
             id="top10-slider"
-            title="Top 10 인기 드라마"
+            title="오늘의 인기 드라마"
             items={slidersData.popular}
           />
           {/* 2. 감정 드라마 슬라이더 */}
           <SliderSection
             id="emotion-slider"
-            title="감정 드라마"
+            title={emotionTitleMessage}
             items={slidersData.emotion}
           />
           {/* 3. 최신 드라마 슬라이더 */}
           <SliderSection
             id="recent-slider"
-            title="최신 드라마"
+            title="따끈따끈한 최신 드라마, 지금 만나보세요"
             items={slidersData.recent}
           />
         </div>
