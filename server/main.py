@@ -22,6 +22,8 @@ from server.api.routes.recommendation_hybrid import router as rec_hybrid_router
 from server.api.routes.emotion_recommendation import router as emotion_rec_router
 #from server.api.routes.adult_recommendation import router as adult_rec_router
 from server.api.routes.today_recommendation import router as today_rec_router
+from server.api.routes.csv_data import router as csv_data_router
+from server.api.routes.product import router as product_router
 
 
 
@@ -94,6 +96,8 @@ app.include_router(rec_hybrid_router, prefix="",        tags=["recommendation"])
 app.include_router(emotion_rec_router, prefix="",        tags=["emotion_recommendation"])
 app.include_router(rec_router,        prefix="",        tags=["recommendations"])
 app.include_router(today_rec_router, prefix="",        tags=["recommendation"])
+app.include_router(csv_data_router,   prefix="",        tags=["csv-data"])
+app.include_router(product_router,    prefix="",        tags=["products"])
 
 # 로거 설정
 logger = logging.getLogger("uvicorn")
