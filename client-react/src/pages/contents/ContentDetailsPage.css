@@ -300,6 +300,36 @@
   box-shadow: 0 2px 16px rgba(0,0,0,0.15);
 }
 
+/* 에피소드 페이지네이션 */
+.episode-pagination {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.pagination-btn {
+  background-color: transparent;
+  color: #c0c0c0;
+  border: 1px solid #444;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.pagination-btn:hover {
+  background-color: #333;
+  color: white;
+}
+
+.pagination-btn.active {
+  background-color: #e50914;
+  color: white;
+  border-color: #e50914;
+}
+
 .episode-list-section h2 {
   color: #fff;
   font-size: 1.3rem;

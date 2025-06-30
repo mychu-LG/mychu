@@ -13,10 +13,13 @@ const ContentDetailsPage = () => {
   const [isSeries, setIsSeries] = useState(false);
   const [seriesInfo, setSeriesInfo] = useState(null); // 시리즈 정보(상단)
   const [episodes, setEpisodes] = useState([]); // 시리즈 에피소드 리스트
+  const [currentPage, setCurrentPage] = useState(1); // 에피소드 페이징
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isWish, setIsWish] = useState(false);
   const [wishLoading, setWishLoading] = useState(false);
+
+  const EPISODES_PER_PAGE = 10;
 
   // 단일 콘텐츠 데이터 매핑 함수
   function mapContentData(contentData) {
@@ -134,6 +137,10 @@ const ContentDetailsPage = () => {
 
   // ----- 시리즈물 UI -----
   if (isSeries && seriesInfo) {
+    const totalPages = Math.ceil(episodes.length / EPISODES_PER_PAGE);
+    const startIdx = (currentPage - 1) * EPISODES_PER_PAGE;
+    const currentEpisodes = episodes.slice(startIdx, startIdx + EPISODES_PER_PAGE);
+
     return (
       <div className="content-details-page series-mode">
         {/* 시리즈 상단 정보 */}
@@ -144,7 +151,7 @@ const ContentDetailsPage = () => {
           <div className="series-info">
             <h1>{seriesInfo.super_asset_nm}</h1>
             <div className="series-meta">
-              <span>{seriesInfo.rlse_year}</span>
+              <span>{String(seriesInfo.rlse_year).slice(0, 4)}</span>
               <span className="meta-divider">•</span>
               <span>{seriesInfo.genre}</span>
               <span className="meta-divider">•</span>
@@ -158,11 +165,12 @@ const ContentDetailsPage = () => {
             </button>
           </div>
         </div>
+
         {/* 에피소드 리스트 */}
         <div className="episode-list-section">
           <h2>에피소드</h2>
           <div className="episode-list">
-            {episodes.map((ep, idx) => (
+            {currentEpisodes.map((ep) => (
               <div className="episode-item" key={ep.epsd_no}>
                 <div className="episode-no">{String(ep.epsd_no).padStart(2, '0')}</div>
                 <div className="episode-info">
@@ -175,6 +183,21 @@ const ContentDetailsPage = () => {
               </div>
             ))}
           </div>
+
+          {/* 페이지네이션 */}
+          {totalPages > 1 && (
+            <div className="episode-pagination">
+              {Array.from({ length: totalPages }, (_, idx) => (
+                <button
+                  key={idx}
+                  className={`pagination-btn ${currentPage === idx + 1 ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(idx + 1)}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -205,27 +228,23 @@ const ContentDetailsPage = () => {
 
         <div className="content-info">
           <h1>{displayContent?.asset_nm}</h1>
-          
           <div className="content-meta">
-            <span>{displayContent?.release_year}</span>
+            <span>{displayContent?.rlse_year}</span>
             <span className="meta-divider">•</span>
             <span>{displayContent?.genre}</span>
             <span className="meta-divider">•</span>
             <span>{displayContent?.runtime}분</span>
           </div>
-          
           <div className="content-synopsis">
             <h3>개요</h3>
             <p>{displayContent?.synopsis}</p>
           </div>
-          
           <div className="content-people">
             <div className="content-actors">
               <h3>출연</h3>
               <p>{displayContent?.actors?.join(', ')}</p>
             </div>
           </div>
-          
           <div className="content-actions">
             <button className="play-button">
               <i className="play-icon">▶</i> 재생
