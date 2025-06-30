@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import Slider from '../../components/slider/Slider';
+import ProductSlider from '../../components/slider/ProductSlider';
 import './ContentDetailsPage.css';
 
 const userIdx = 541;
@@ -97,12 +98,15 @@ const ContentDetailsPage = () => {
         const productData = await productRes.json();
         const similarData = await similarRes.json();
 
-        setProductList((productData.products || []).map((p) => ({
-          asset_idx: p.id || p.asset_idx || Math.random(),
-          asset_nm: p.name,
-          poster_path: p.image,
-          subtitle: `${p.price}원`,
-        })));
+        setProductList((productData.products || []).map((p) => {
+          const cleanImage = p.img_path?.replace(/.*\/cjhello-hirental\.co\.kr\//, 'https://cjhello-hirental.co.kr/');
+          return {
+            asset_idx: p.product_no || Math.random(),
+            asset_nm: p.name,
+            poster_path: cleanImage,
+            subtitle: `${p.price.toLocaleString()}원`,
+          };
+        }));
 
         setSimilarList((similarData.items || []).map((c) => ({
           ...c,
@@ -157,6 +161,44 @@ const ContentDetailsPage = () => {
       </div>
     );
   }
+
+  const SliderSection = ({ id, title, items, useProductSlider }) => {
+    const sliderRef = useRef();
+
+    const handlePrev = () => {
+      sliderRef.current?.prev();
+    };
+
+    const handleNext = () => {
+      sliderRef.current?.next();
+    };
+
+    const SliderComponent = useProductSlider ? ProductSlider : Slider;
+
+    return (
+      <section className="slider-section" id={`${id}-section`}>
+        <div className="section-header">
+          <h2 className="section-title">{title}</h2>
+          <div className="section-controls">
+            <button className="control-btn prev-btn" aria-label="이전" onClick={handlePrev}>
+              <span className="icon icon-arrow-left"></span>
+            </button>
+            <button className="control-btn next-btn" aria-label="다음" onClick={handleNext}>
+              <span className="icon icon-arrow-right"></span>
+            </button>
+          </div>
+        </div>
+        <div className="slider-container">
+          <SliderComponent
+            ref={sliderRef}
+            items={items}
+            sliderId={id}
+            showTitle={false}
+          />
+        </div>
+      </section>
+    );
+  };
 
   if (isSeries && seriesInfo) {
     const totalPages = Math.ceil(episodes.length / EPISODES_PER_PAGE);
@@ -229,6 +271,7 @@ const ContentDetailsPage = () => {
             id="commerce-slider"
             title="헬로 렌탈 추천 상품"
             items={productList}
+            useProductSlider={true}
           />
         )}
         {similarList.length > 0 && (
@@ -236,6 +279,7 @@ const ContentDetailsPage = () => {
             id="similar-slider"
             title="비슷한 콘텐츠 추천"
             items={similarList}
+            useProductSlider={false}
           />
         )}
       </div>
@@ -289,6 +333,7 @@ const ContentDetailsPage = () => {
           id="commerce-slider"
           title="헬로 렌탈 추천 상품"
           items={productList}
+          useProductSlider={true}
         />
       )}
       {similarList.length > 0 && (
@@ -296,57 +341,10 @@ const ContentDetailsPage = () => {
           id="similar-slider"
           title="비슷한 콘텐츠 추천"
           items={similarList}
+          useProductSlider={false}
         />
       )}
     </div>
-  );
-};
-
-// 공통 슬라이더 섹션
-const SliderSection = ({ id, title, items }) => {
-  const sliderRef = useRef();
-
-  const handlePrev = () => {
-    if (sliderRef.current && sliderRef.current.prev) {
-      sliderRef.current.prev();
-    }
-  };
-
-  const handleNext = () => {
-    if (sliderRef.current && sliderRef.current.next) {
-      sliderRef.current.next();
-    }
-  };
-
-  return (
-    <section className="slider-section" id={`${id}-section`}>
-      <div className="section-header">
-        <h2 className="section-title">{title}</h2>
-        <div className="section-controls">
-          <button className="control-btn prev-btn" aria-label="이전" onClick={handlePrev}>
-            <span className="icon icon-arrow-left"></span>
-          </button>
-          <button className="control-btn next-btn" aria-label="다음" onClick={handleNext}>
-            <span className="icon icon-arrow-right"></span>
-          </button>
-        </div>
-      </div>
-      <div className="slider-container">
-        {items && items.length > 0 ? (
-          <Slider
-            ref={sliderRef}
-            items={items}
-            title={title}
-            sliderId={id}
-            showTitle={false}
-          />
-        ) : (
-          <div className="no-content">
-            <p>콘텐츠를 불러오는 중입니다...</p>
-          </div>
-        )}
-      </div>
-    </section>
   );
 };
 
