@@ -166,38 +166,39 @@ const ContentDetailsPage = () => {
           </div>
         </div>
 
-        {/* 에피소드 리스트 */}
-        <div className="episode-list-section">
-          <h2>에피소드</h2>
-          <div className="episode-list">
-            {currentEpisodes.map((ep) => (
-              <div className="episode-item" key={ep.epsd_no}>
-                <div className="episode-no">{String(ep.epsd_no).padStart(2, '0')}</div>
-                <div className="episode-info">
-                  <div className="episode-title">{ep.asset_nm}</div>
-                  <div className="episode-summary">{ep.smry_shrt}</div>
+        {/* 에피소드 리스트 섹션 감싸는 wrapper로 너비 확장 */}
+        <div className="episode-list-wrapper">
+          <div className="episode-list-section">
+            <h2>에피소드</h2>
+            <div className="episode-list">
+              {currentEpisodes.map((ep) => (
+                <div className="episode-item" key={ep.epsd_no}>
+                  <div className="episode-no">{String(ep.epsd_no).padStart(2, '0')}</div>
+                  <div className="episode-info">
+                    <div className="episode-title">{ep.asset_nm}</div>
+                    <div className="episode-summary">{ep.smry_shrt}</div>
+                  </div>
+                  <button className="play-button episode-play">
+                    <i className="play-icon">▶</i> 재생
+                  </button>
                 </div>
-                <button className="play-button episode-play">
-                  <i className="play-icon">▶</i> 재생
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* 페이지네이션 */}
-          {totalPages > 1 && (
-            <div className="episode-pagination">
-              {Array.from({ length: totalPages }, (_, idx) => (
-                <button
-                  key={idx}
-                  className={`pagination-btn ${currentPage === idx + 1 ? 'active' : ''}`}
-                  onClick={() => setCurrentPage(idx + 1)}
-                >
-                  {idx + 1}
-                </button>
               ))}
             </div>
-          )}
+
+            {totalPages > 1 && (
+              <div className="episode-pagination">
+                {Array.from({ length: totalPages }, (_, idx) => (
+                  <button
+                    key={idx}
+                    className={`pagination-btn ${currentPage === idx + 1 ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(idx + 1)}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -210,9 +211,7 @@ const ContentDetailsPage = () => {
       {/* 배경 이미지 */}
       <div 
         className="content-backdrop"
-        style={{ 
-          backgroundImage: `url(${displayContent?.poster_path})` 
-        }}
+        style={{ backgroundImage: `url(${displayContent?.poster_path})` }}
       >
         <div className="backdrop-overlay"></div>
       </div>
@@ -220,10 +219,7 @@ const ContentDetailsPage = () => {
       {/* 콘텐츠 정보 */}
       <div className="content-info-container">
         <div className="content-poster">
-          <img 
-            src={displayContent?.poster_path} 
-            alt={displayContent?.asset_nm} 
-          />
+          <img src={displayContent?.poster_path} alt={displayContent?.asset_nm} />
         </div>
 
         <div className="content-info">
@@ -260,7 +256,7 @@ const ContentDetailsPage = () => {
       <div className="related-content">
         <h2>비슷한 콘텐츠</h2>
         <div className="related-content-grid">
-          {/* 기존 샘플 데이터 활용 */}
+          {/* 유사 콘텐츠 표시 영역 */}
         </div>
       </div>
     </div>

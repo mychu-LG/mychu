@@ -1,9 +1,10 @@
+/* 콘텐츠 상세 페이지 전체 레이아웃 */
 .content-details-page {
   position: relative;
   min-height: 100vh;
 }
 
-/* 배경 이미지 스타일 */
+/* 배경 이미지 */
 .content-backdrop {
   position: absolute;
   top: 0;
@@ -33,179 +34,178 @@
   gap: 2rem;
 }
 
-/* 포스터 이미지 */
-.content-poster {
-  flex: 0 0 300px;
-}
-
 .content-poster img {
-  width: 100%;
+  width: 300px;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
-/* 콘텐츠 상세 정보 */
 .content-info {
   flex: 1;
-  color: #ffffff;
+  color: #fff;
 }
 
-.content-info h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  font-weight: 700;
-}
-
-/* 메타 정보 (개봉년도, 장르, 러닝타임 등) */
 .content-meta {
   display: flex;
   align-items: center;
-  margin-bottom: 1.5rem;
-  color: #c0c0c0;
-  font-size: 1rem;
+  gap: 0.5rem;
+  margin: 1rem 0;
 }
 
 .meta-divider {
-  margin: 0 0.5rem;
+  margin: 0 0.3rem;
 }
 
-/* 줄거리 */
-.content-synopsis {
-  margin-bottom: 1.5rem;
-}
-
-.content-synopsis h3 {
-  font-size: 1.2rem;
-  color: #c0c0c0;
-  margin-bottom: 0.5rem;
-}
-
-.content-synopsis p {
-  line-height: 1.6;
-  font-size: 1rem;
-}
-
-/* 출연 정보 */
-.content-people {
-  display: flex;
-  margin-bottom: 2rem;
-}
-
-.content-people h3 {
-  font-size: 1.2rem;
-  color: #c0c0c0;
-  margin-bottom: 0.5rem;
-}
-
-/* 액션 버튼 */
 .content-actions {
   display: flex;
   gap: 1rem;
-}
-
-.play-button, .add-list-button {
-  padding: 0.8rem 2rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  margin-top: 1.5rem;
 }
 
 .play-button {
-  background-color: #e50914;
+  background-color: #059669;
   color: white;
-}
-
-.add-list-button {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-}
-
-/* 관련 콘텐츠 섹션 */
-.related-content {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-}
-
-.related-content h2 {
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  color: #ffffff;
-}
-
-.related-content-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
-}
-
-.related-content-item {
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  font-weight: bold;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: background-color 0.3s ease;
 }
 
-.related-content-item:hover {
-  transform: scale(1.05);
+.play-button:hover {
+  background-color: #047857;
 }
 
-.related-content-item img {
-  width: 100%;
-  border-radius: 4px;
+/* 찜 버튼 */
+.add-list-button {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  color: white;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.add-list-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 시리즈 콘텐츠용 헤더 */
+.series-header {
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8rem 1rem 2rem;
+  gap: 2rem;
+  color: #fff;
+}
+
+.series-poster img {
+  width: 300px;
+  border-radius: 8px;
+}
+
+.series-info h1 {
   margin-bottom: 0.5rem;
 }
 
-.related-content-item h3 {
-  font-size: 0.9rem;
-  color: #c0c0c0;
-  font-weight: 400;
+/* 에피소드 리스트 전체 너비 확장 wrapper */
+.episode-list-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
 }
 
-/* 로딩 상태 */
-.content-details-loading {
+.episode-list-section h2 {
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.episode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.episode-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 6px;
+  color: #fff;
+}
+
+.episode-info {
+  flex: 1;
+  margin-left: 1rem;
+}
+
+.episode-no {
+  font-weight: bold;
+  font-size: 1.2rem;
+  width: 2rem;
+  text-align: center;
+}
+
+.episode-title {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.episode-summary {
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-top: 0.3rem;
+}
+
+.episode-play {
+  margin-left: auto;
+}
+
+/* 페이지네이션 */
+.episode-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  gap: 0.5rem;
+}
+
+.pagination-btn {
+  background: #444;
+  color: #fff;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagination-btn.active {
+  background: #059669;
+  font-weight: bold;
+}
+
+/* 로딩/에러 */
+.content-details-loading,
+.content-details-error {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 70vh;
-  color: #c0c0c0;
+  padding: 4rem;
+  color: #fff;
 }
 
 .loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
+  width: 40px;
+  height: 40px;
+  border: 4px solid #ccc;
+  border-top-color: #1DB954;
   border-radius: 50%;
-  border-top-color: #e50914;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
-}
-
-/* 에러 상태 */
-.content-details-error {
-  max-width: 500px;
-  margin: 5rem auto;
-  text-align: center;
-  color: #c0c0c0;
-  padding: 2rem;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-}
-
-.content-details-error button {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: #e50914;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
 }
 
 @keyframes spin {
@@ -214,208 +214,16 @@
   }
 }
 
-/* 반응형 스타일 */
-@media (max-width: 768px) {
-  .content-info-container {
-    flex-direction: column;
-    padding-top: 6rem;
-  }
-  
-  .content-poster {
-    flex: 0 0 auto;
-    max-width: 200px;
-    margin: 0 auto;
-  }
-  
-  .content-info h1 {
-    font-size: 2rem;
-    margin-top: 1rem;
-  }
-  
-  .content-people {
-    flex-direction: column;
-  }
-  
-  .related-content-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  }
-}
-
-/* 시리즈 전용 레이아웃 */
-.series-mode {
-  background: #181818;
-  min-height: 100vh;
-}
-
-.series-header {
-  display: flex;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 4rem 1rem 2rem;
-  gap: 2.5rem;
-  align-items: flex-start;
-}
-
-.series-poster {
-  flex: 0 0 260px;
-}
-
-.series-poster img {
-  width: 100%;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-}
-
-.series-info {
-  flex: 1;
+/* 관련 콘텐츠 영역 */
+.related-content {
+  max-width: 1200px;
+  margin: 3rem auto;
+  padding: 0 1rem;
   color: #fff;
 }
 
-.series-info h1 {
-  font-size: 2.2rem;
-  margin-bottom: 1.2rem;
-  font-weight: 700;
-}
-
-.series-meta {
-  display: flex;
-  align-items: center;
-  color: #c0c0c0;
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-}
-
-.series-actors {
-  margin-bottom: 1.5rem;
-  color: #c0c0c0;
-  font-size: 1rem;
-}
-
-.episode-list-section {
-  max-width: 900px;
-  margin: 0 auto 3rem auto;
-  background: #111;
-  border-radius: 12px;
-  padding: 2rem 1.5rem;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.15);
-}
-
-/* 에피소드 페이지네이션 */
-.episode-pagination {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.pagination-btn {
-  background-color: transparent;
-  color: #c0c0c0;
-  border: 1px solid #444;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-weight: 500;
-}
-
-.pagination-btn:hover {
-  background-color: #333;
-  color: white;
-}
-
-.pagination-btn.active {
-  background-color: #e50914;
-  color: white;
-  border-color: #e50914;
-}
-
-.episode-list-section h2 {
-  color: #fff;
-  font-size: 1.3rem;
-  margin-bottom: 1.5rem;
-}
-
-.episode-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.episode-item {
-  display: flex;
-  align-items: center;
-  background: #181818;
-  border-radius: 8px;
-  padding: 1.2rem 1rem;
-  margin-bottom: 0.5rem;
-  border: 1px solid #222;
-  transition: background 0.2s;
-}
-
-.episode-item:hover {
-  background: #232323;
-}
-
-.episode-no {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #bdbdbd;
-  width: 48px;
-  flex-shrink: 0;
-}
-
-.episode-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.episode-title {
-  font-size: 1.1rem;
-  color: #fff;
-  font-weight: 500;
-}
-
-.episode-summary {
-  font-size: 0.98rem;
-  color: #bdbdbd;
-  margin-top: 0.2rem;
-}
-
-.episode-play {
-  margin-left: 1.5rem;
-  background: #e50914;
-  color: #fff;
-  border-radius: 4px;
-  padding: 0.6rem 1.3rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  transition: background 0.2s;
-}
-
-.episode-play:hover {
-  background: #b0060f;
-}
-
-@media (max-width: 900px) {
-  .series-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1.5rem;
-    padding-top: 2rem;
-  }
-  .series-poster {
-    max-width: 180px;
-    margin: 0 auto;
-  }
-  .episode-list-section {
-    padding: 1.2rem 0.5rem;
-  }
+.related-content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
 }
