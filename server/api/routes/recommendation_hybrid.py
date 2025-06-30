@@ -372,9 +372,3 @@ async def get_hybrid_recommendations_for_user(
         logger.error(f"Error in get_hybrid_recommendations_for_user: {str(e)}")
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
-
-
-
-

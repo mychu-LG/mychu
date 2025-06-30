@@ -26,12 +26,21 @@ user_idx,asset_idx,rating,created_at
 2,1,5.0,2023-01-03
 ```
 
-### 4. product.csv (제품 데이터) - **NEW**
-```csv
-name,price,category_main,category_sub,img_path,product_no
-삼성 창문형 에어컨,28900,계절가전,에어컨,https://example.com/image1.jpg,2214
-LG벽걸이에어컨,30900,계절가전,에어컨,https://example.com/image2.jpg,2204
-```
+### 4. product.csv (제품 데이터)
+- **목적:** 다양한 렌탈/판매 제품의 정보를 저장합니다. (예: 가전, 가구, 반려동물 용품 등)
+- **주요 컬럼:**
+  - `name`: 제품명
+  - `price`: 월 렌탈료 또는 가격(숫자)
+  - `category_main`: 메인 카테고리 (예: 계절가전, 생활가전 등)
+  - `category_sub`: 서브 카테고리 (예: 에어컨, 비데 등)
+  - `img_path`: 제품 이미지 URL
+  - `product_no`: 제품 고유 번호(숫자)
+- **예시:**
+  ```csv
+  name,price,category_main,category_sub,img_path,product_no
+  삼성 창문형 에어컨,28900,계절가전,에어컨,https://example.com/image1.jpg,2214
+  LG벽걸이에어컨,30900,계절가전,에어컨,https://example.com/image2.jpg,2204
+  ```
 
 ## API 엔드포인트
 
