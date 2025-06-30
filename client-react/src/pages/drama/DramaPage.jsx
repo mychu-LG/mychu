@@ -4,10 +4,14 @@ import Hero from '../../components/hero/Hero';
 import ContentSection from '../../components/content/ContentSection';
 import GenreDropdown from '../../components/dropdown/GenreDropdown';
 import Slider from '../../components/slider/Slider';
-import { getTodayRecommendations } from '../../services/todayRecommendationService';
+//import { getTodayRecommendations } from '../../services/todayRecommendationService';
 import { getPopularContent, getEmotionContent, getRecentContent } from '../../services/recommendationService';
 import { getCurrentUser } from '../../services/auth';
 import './DramaPage.css';
+import { getMyData } from "../../services/csvService";
+import { mapCsvItemToHero } from "../../utils/mapCsvItemToHero";
+
+
 
 /**
  * 드라마 전용 페이지 컴포넌트 - 메인 페이지와 동일한 UI 구조
@@ -52,7 +56,8 @@ const DramaPage = () => {
       // Hero 데이터 로드 (개별 에러 처리)
       let heroResult = [];
       try {
-        heroResult = await getTodayRecommendations(userId, 5);
+        const rawData = await getMyData(userId);
+        heroResult = rawData.map(mapCsvItemToHero).filter(item => item.is_drama === 1 && item.is_movie === 0).sort((a, b) => Number(a.rank) - Number(b.rank));
       } catch (err) {
         setHeroError('Hero 콘텐츠를 불러올 수 없습니다.');
         heroResult = [];

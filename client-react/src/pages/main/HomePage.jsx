@@ -3,10 +3,13 @@ import { useLocation } from 'react-router-dom';
 import Hero from '../../components/hero/Hero';
 import Slider from '../../components/slider/Slider';
 import GenreDropdown from '../../components/dropdown/GenreDropdown';
-import { getTodayRecommendations } from '../../services/todayRecommendationService';
+//import { getTodayRecommendations } from '../../services/todayRecommendationService';
 import { getPopularContent, getEmotionContent, getRecentContent } from '../../services/recommendationService';
 import { getCurrentUser } from '../../services/auth';
 import './HomePage.css';
+import { getMyData } from "../../services/csvService";
+import { mapCsvItemToHero } from "../../utils/mapCsvItemToHero";
+
 
 /**
  * 재사용 가능한 SliderSection 컴포넌트
@@ -107,42 +110,54 @@ const HomePage = () => {
       setLoading(true);
       setError(null);
       setHeroError(null);
+  
       const userId = getCurrentUserId();
-      // Hero 데이터 로드 (개별 에러 처리)
+      console.log("⭐ userId:", userId);
+  
       let heroResult = [];
+  
       try {
-        heroResult = await getTodayRecommendations(userId, 5);
+        const rawData = await getMyData(userId);
+        console.log("⭐ rawData from CSV API:", rawData);
+  
+        heroResult = rawData
+          .map(mapCsvItemToHero)
+          .sort((a, b) => Number(a.rank) - Number(b.rank));
+  
+        console.log("⭐ heroResult:", heroResult);
       } catch (err) {
+        console.error(err);
         setHeroError('Hero 콘텐츠를 불러올 수 없습니다.');
         heroResult = [];
       }
-      // 슬라이더 데이터 로드 (genre 적용)
+  
       const [popularResult, emotionResult, recentResult] = await Promise.all([
         getPopularContent({ limit: 10, is_adult: false, genre: genreParam || undefined }).catch(() => []),
         getEmotionContent({ limit: 10, is_adult: false, genre: genreParam || undefined }).catch(() => []),
-        getRecentContent({ limit: 10, is_adult: false, genre: genreParam || undefined }).catch(() => [])
+        getRecentContent({ limit: 10, is_adult: false, genre: genreParam || undefined }).catch(() => []),
       ]);
-      // Hero 데이터 설정
+  
       if (heroResult && heroResult.length > 0) {
         setHeroData(heroResult);
         setHeroError(null);
       } else {
         setHeroError('추천 데이터가 없습니다.');
       }
-      // 슬라이더 데이터 설정
-      const newSlidersData = {
+  
+      setSlidersData({
         popular: popularResult || [],
         emotion: emotionResult || [],
-        recent: recentResult || []
-      };
-      setSlidersData(newSlidersData);
+        recent: recentResult || [],
+      });
     } catch (err) {
+      console.error(err);
       setError('데이터를 불러오는 중 문제가 발생했습니다.');
       setHeroError('추천 콘텐츠를 불러오는 중 문제가 발생했습니다.');
     } finally {
       setLoading(false);
     }
   };
+
 
   if (loading) {
     return (

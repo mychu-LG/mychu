@@ -61,3 +61,41 @@ def get_personalized_recommendations(
             continue
 
     return RecommendationResponse(items=items)
+
+
+from fastapi import APIRouter
+import csv
+import os
+from fastapi.responses import JSONResponse
+
+router = APIRouter()
+
+from fastapi import APIRouter, Query
+import csv
+import os
+from fastapi.responses import JSONResponse
+
+router = APIRouter()
+
+@router.get("/my-data")
+async def read_my_data(user_idx: int = Query(..., description="사용자 idx")):
+    # 현재 파일 위치 (예: server/api/routes)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # 상대경로 조합
+    csv_path = os.path.join(current_dir, "../../core/data/three_users.csv")
+    csv_path = os.path.normpath(csv_path)
+
+    data = []
+    try:
+        with open(csv_path, newline="", encoding="utf-8-sig") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                # ✅ user_idx 필터링
+                if int(row["user_id"]) == user_idx:
+                    data.append(row)
+        return JSONResponse(content=data)
+
+    except Exception as e:
+        print(f"CSV 읽기 오류: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
