@@ -1,27 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import Slider from '../../components/slider/Slider';
 import './ContentDetailsPage.css';
 
-const userIdx = 541; // 실제 로그인 유저 정보로 대체
+const userIdx = 541;
 
-/**
- * 콘텐츠 상세 페이지 컴포넌트
- */
 const ContentDetailsPage = () => {
   const { id } = useParams();
   const [content, setContent] = useState(null);
   const [isSeries, setIsSeries] = useState(false);
-  const [seriesInfo, setSeriesInfo] = useState(null); // 시리즈 정보(상단)
-  const [episodes, setEpisodes] = useState([]); // 시리즈 에피소드 리스트
-  const [currentPage, setCurrentPage] = useState(1); // 에피소드 페이징
+  const [seriesInfo, setSeriesInfo] = useState(null);
+  const [episodes, setEpisodes] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isWish, setIsWish] = useState(false);
   const [wishLoading, setWishLoading] = useState(false);
+  const [productList, setProductList] = useState([]);
+  const [similarList, setSimilarList] = useState([]);
 
   const EPISODES_PER_PAGE = 10;
 
-  // 단일 콘텐츠 데이터 매핑 함수
   function mapContentData(contentData) {
     return {
       idx: contentData.idx,
@@ -40,18 +39,15 @@ const ContentDetailsPage = () => {
     };
   }
 
-  // 시리즈/단일 여부 판별 및 데이터 로드
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        // 1. 시리즈/단일 통합 API 호출
         const seriesRes = await fetch(`http://localhost:8000/assets/series/${id}`);
         if (!seriesRes.ok) throw new Error('콘텐츠 정보 오류');
         const seriesInfo = await seriesRes.json();
         const episodes = seriesInfo.episodes || [];
-        // 1. epsd_no 기준 중복 제거
         const uniqueEpisodes = [];
         const seen = new Set();
         for (const ep of episodes) {
@@ -60,7 +56,6 @@ const ContentDetailsPage = () => {
             seen.add(ep.epsd_no);
           }
         }
-        // 2. 시리즈/단일 판별
         const epsdNoSet = new Set(uniqueEpisodes.map(ep => ep.epsd_no));
         const isSingle = epsdNoSet.size === 1 && uniqueEpisodes[0]?.epsd_no === 1;
         const isSeries = uniqueEpisodes.length > 1 && !isSingle;
@@ -68,7 +63,6 @@ const ContentDetailsPage = () => {
         setEpisodes(uniqueEpisodes);
         setSeriesInfo(seriesInfo);
         if (!isSeries) {
-          // 단일 콘텐츠 UI를 위해 첫 에피소드 정보만 mapContentData로 변환
           setContent(mapContentData({ ...seriesInfo, ...uniqueEpisodes[0] }));
         }
       } catch (err) {
@@ -77,10 +71,10 @@ const ContentDetailsPage = () => {
         setLoading(false);
       }
     }
+
     fetchData();
   }, [id]);
 
-  // 찜 상태 확인 (시리즈/단일 공통)
   useEffect(() => {
     async function fetchWish() {
       try {
@@ -89,10 +83,39 @@ const ContentDetailsPage = () => {
         setIsWish(data.mylist.includes(Number(id)));
       } catch (e) {}
     }
+
     fetchWish();
   }, [id]);
 
-  // 찜/찜 해제 핸들러 (시리즈/단일 공통)
+  useEffect(() => {
+    async function fetchExtraContent() {
+      try {
+        const [productRes, similarRes] = await Promise.all([
+          fetch('http://localhost:8000/products/random'),
+          fetch(`http://localhost:8000/recommendation/similar/${id}`)
+        ]);
+        const productData = await productRes.json();
+        const similarData = await similarRes.json();
+
+        setProductList((productData.products || []).map((p) => ({
+          asset_idx: p.id || p.asset_idx || Math.random(),
+          asset_nm: p.name,
+          poster_path: p.image,
+          subtitle: `${p.price}원`,
+        })));
+
+        setSimilarList((similarData.items || []).map((c) => ({
+          ...c,
+          subtitle: '',
+        })));
+      } catch (e) {
+        console.error('추천 콘텐츠/상품 로딩 실패', e);
+      }
+    }
+
+    fetchExtraContent();
+  }, [id]);
+
   const handleWish = async () => {
     setWishLoading(true);
     try {
@@ -135,7 +158,6 @@ const ContentDetailsPage = () => {
     );
   }
 
-  // ----- 시리즈물 UI -----
   if (isSeries && seriesInfo) {
     const totalPages = Math.ceil(episodes.length / EPISODES_PER_PAGE);
     const startIdx = (currentPage - 1) * EPISODES_PER_PAGE;
@@ -143,7 +165,7 @@ const ContentDetailsPage = () => {
 
     return (
       <div className="content-details-page series-mode">
-        {/* 시리즈 상단 정보 */}
+        {/* 시리즈 콘텐츠 상단 */}
         <div className="series-header">
           <div className="series-poster">
             <img src={seriesInfo.poster_path} alt={seriesInfo.super_asset_nm} />
@@ -166,7 +188,7 @@ const ContentDetailsPage = () => {
           </div>
         </div>
 
-        {/* 에피소드 리스트 섹션 감싸는 wrapper로 너비 확장 */}
+        {/* 에피소드 리스트 */}
         <div className="episode-list-wrapper">
           <div className="episode-list-section">
             <h2>에피소드</h2>
@@ -200,23 +222,33 @@ const ContentDetailsPage = () => {
             )}
           </div>
         </div>
+
+        {/* 하단 추천 섹션 */}
+        {productList.length > 0 && (
+          <SliderSection
+            id="commerce-slider"
+            title="헬로 렌탈 추천 상품"
+            items={productList}
+          />
+        )}
+        {similarList.length > 0 && (
+          <SliderSection
+            id="similar-slider"
+            title="비슷한 콘텐츠 추천"
+            items={similarList}
+          />
+        )}
       </div>
     );
   }
 
-  // ----- 단일 콘텐츠 UI (기존과 동일) -----
   const displayContent = content;
   return (
     <div className="content-details-page">
-      {/* 배경 이미지 */}
-      <div 
-        className="content-backdrop"
-        style={{ backgroundImage: `url(${displayContent?.poster_path})` }}
-      >
+      <div className="content-backdrop" style={{ backgroundImage: `url(${displayContent?.poster_path})` }}>
         <div className="backdrop-overlay"></div>
       </div>
 
-      {/* 콘텐츠 정보 */}
       <div className="content-info-container">
         <div className="content-poster">
           <img src={displayContent?.poster_path} alt={displayContent?.asset_nm} />
@@ -252,14 +284,69 @@ const ContentDetailsPage = () => {
         </div>
       </div>
 
-      {/* 관련 콘텐츠 섹션 */}
-      <div className="related-content">
-        <h2>비슷한 콘텐츠</h2>
-        <div className="related-content-grid">
-          {/* 유사 콘텐츠 표시 영역 */}
+      {productList.length > 0 && (
+        <SliderSection
+          id="commerce-slider"
+          title="헬로 렌탈 추천 상품"
+          items={productList}
+        />
+      )}
+      {similarList.length > 0 && (
+        <SliderSection
+          id="similar-slider"
+          title="비슷한 콘텐츠 추천"
+          items={similarList}
+        />
+      )}
+    </div>
+  );
+};
+
+// 공통 슬라이더 섹션
+const SliderSection = ({ id, title, items }) => {
+  const sliderRef = useRef();
+
+  const handlePrev = () => {
+    if (sliderRef.current && sliderRef.current.prev) {
+      sliderRef.current.prev();
+    }
+  };
+
+  const handleNext = () => {
+    if (sliderRef.current && sliderRef.current.next) {
+      sliderRef.current.next();
+    }
+  };
+
+  return (
+    <section className="slider-section" id={`${id}-section`}>
+      <div className="section-header">
+        <h2 className="section-title">{title}</h2>
+        <div className="section-controls">
+          <button className="control-btn prev-btn" aria-label="이전" onClick={handlePrev}>
+            <span className="icon icon-arrow-left"></span>
+          </button>
+          <button className="control-btn next-btn" aria-label="다음" onClick={handleNext}>
+            <span className="icon icon-arrow-right"></span>
+          </button>
         </div>
       </div>
-    </div>
+      <div className="slider-container">
+        {items && items.length > 0 ? (
+          <Slider
+            ref={sliderRef}
+            items={items}
+            title={title}
+            sliderId={id}
+            showTitle={false}
+          />
+        ) : (
+          <div className="no-content">
+            <p>콘텐츠를 불러오는 중입니다...</p>
+          </div>
+        )}
+      </div>
+    </section>
   );
 };
 

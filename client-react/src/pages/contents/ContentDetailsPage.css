@@ -1,10 +1,12 @@
-/* 콘텐츠 상세 페이지 전체 레이아웃 */
+/* ========== 전체 레이아웃 ========== */
 .content-details-page {
   position: relative;
   min-height: 100vh;
+  color: #fff;
+  background-color: #0f1116;
 }
 
-/* 배경 이미지 */
+/* ========== 배경 이미지 ========== */
 .content-backdrop {
   position: absolute;
   top: 0;
@@ -25,7 +27,7 @@
   background: linear-gradient(to bottom, rgba(15, 17, 22, 0.7) 0%, rgba(15, 17, 22, 0.8) 50%, rgba(15, 17, 22, 1) 95%);
 }
 
-/* 콘텐츠 정보 컨테이너 */
+/* ========== 콘텐츠 정보 ========== */
 .content-info-container {
   display: flex;
   max-width: 1200px;
@@ -41,7 +43,6 @@
 
 .content-info {
   flex: 1;
-  color: #fff;
 }
 
 .content-meta {
@@ -53,6 +54,11 @@
 
 .meta-divider {
   margin: 0 0.3rem;
+}
+
+.content-synopsis h3,
+.content-actors h3 {
+  margin: 0.5rem 0 0.2rem;
 }
 
 .content-actions {
@@ -76,7 +82,6 @@
   background-color: #047857;
 }
 
-/* 찜 버튼 */
 .add-list-button {
   background-color: transparent;
   border: 1px solid #ccc;
@@ -91,14 +96,13 @@
   cursor: not-allowed;
 }
 
-/* 시리즈 콘텐츠용 헤더 */
+/* ========== 시리즈 전용 ========== */
 .series-header {
   display: flex;
   max-width: 1200px;
   margin: 0 auto;
   padding: 8rem 1rem 2rem;
   gap: 2rem;
-  color: #fff;
 }
 
 .series-poster img {
@@ -110,9 +114,9 @@
   margin-bottom: 0.5rem;
 }
 
-/* 에피소드 리스트 전체 너비 확장 wrapper */
+/* 에피소드 리스트 */
 .episode-list-wrapper {
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 0 1rem 2rem;
 }
@@ -187,7 +191,43 @@
   font-weight: bold;
 }
 
-/* 로딩/에러 */
+/* ========== 공통 슬라이더 섹션 (SliderSection) ========== */
+.slider-section {
+  max-width: 1200px;
+  margin: 3rem auto;
+  padding: 0 1rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.section-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.control-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.slider-container {
+  overflow: hidden;
+}
+
+/* ========== 로딩 / 에러 ========== */
 .content-details-loading,
 .content-details-error {
   display: flex;
@@ -212,18 +252,4 @@
   to {
     transform: rotate(360deg);
   }
-}
-
-/* 관련 콘텐츠 영역 */
-.related-content {
-  max-width: 1200px;
-  margin: 3rem auto;
-  padding: 0 1rem;
-  color: #fff;
-}
-
-.related-content-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 1rem;
 }
