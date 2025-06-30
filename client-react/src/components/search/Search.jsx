@@ -1,3 +1,5 @@
+console.log('✅✅✅ Search 컴포넌트 반영 테스트 ✅✅✅');
+
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Search.css';

@@ -1,5 +1,6 @@
 import React from 'react';
 import './Footer.css';
+import welllistLogo from '../../assets/images/logos/welllist_backno.png';
 
 /**
  * 글로벌 푸터 컴포넌트
@@ -13,7 +14,7 @@ const Footer = () => {
         <div className="footer-content">
           <div className="footer-main">
             <div className="footer-logo">
-              <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-4rQcBsBRuYpHMLGMye6UjPhh3yUBKI.png" alt="WellList" className="logo-image" />
+              <img src={welllistLogo} alt="WellList" className="logo-image" />
             </div>
             
             <div className="footer-links">
