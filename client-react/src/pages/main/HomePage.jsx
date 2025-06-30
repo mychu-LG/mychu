@@ -3,18 +3,14 @@ import { useLocation } from 'react-router-dom';
 import Hero from '../../components/hero/Hero';
 import Slider from '../../components/slider/Slider';
 import GenreDropdown from '../../components/dropdown/GenreDropdown';
-<<<<<<< Updated upstream
-import { getPopularContent, getRecentContent } from '../../services/recommendationService';
-=======
-//s<<<<<<< HEAD
+//<<<<<<< HEAD
 //import { getTodayRecommendations } from '../../services/todayRecommendationService';
 import { getPopularContent, getEmotionContent, getRecentContent } from '../../services/recommendationService';
 // =======
-//import { getTodayRecommendations } from '../../services/todayRecommendationService';
-//import { getPopularContent, getRecentContent } from '../../services/recommendationService';
+// import { getTodayRecommendations } from '../../services/todayRecommendationService';
+// import { getPopularContent, getRecentContent } from '../../services/recommendationService';
 // >>>>>>> 1d527afbbe30612450c791a4bd26d111094aff90
 import { getCurrentUser } from '../../services/auth';
->>>>>>> Stashed changes
 import { getEmotionRecommendations } from '../../services/emotionRecommendationService';
 import './HomePage.css';
 import { getMyData } from "../../services/csvService";
