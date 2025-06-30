@@ -57,7 +57,7 @@ const MoviePage = () => {
       let heroResult = [];
       try {
         const rawData = await getMyData(userId);
-        heroResult = rawData.map(mapCsvItemToHero).filter(item => item.is_movie === 1 && item.is_drama === 0).sort((a, b) => Number(a.rank) - Number(b.rank));
+        heroResult = rawData.map(mapCsvItemToHero).filter(item => item.is_movie === 1 && item.is_drama === 0 && item.poster_path !== 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/1200px-No-Image-Placeholder.svg.png').sort((a, b) => Number(a.rank) - Number(b.rank));
       } catch (err) {
         setHeroError('Hero 콘텐츠를 불러올 수 없습니다.');
         heroResult = [];
