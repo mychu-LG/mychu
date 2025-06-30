@@ -64,11 +64,16 @@ const DramaPage = () => {
         heroResult = [];
       }
       // 인기/최신 슬라이더는 기존대로, 감정 슬라이더만 교체
-      const [popularResult, recentResult, emotionResult] = await Promise.all([
+      const [popularResult, recentResult] = await Promise.all([
         getPopularContent({ limit: 10, is_drama: true, is_movie: false, is_adult: false, genre: genreParam || undefined }).catch(() => []),
-        getRecentContent({ limit: 10, is_drama: true, is_movie: false, is_adult: false, genre: genreParam || undefined }).catch(() => []),
-        getEmotionRecommendations({ userIdx: userId, genre: genreParam, isDrama: true }).catch(() => [])
+        getRecentContent({ limit: 10, is_drama: true, is_movie: false, is_adult: false, genre: genreParam || undefined }).catch(() => [])
       ]);
+      // 감정 슬라이더 데이터 (is_drama=1)
+      const emotionResult = await getEmotionRecommendations({
+        userIdx: userId,
+        genre: genreParam,
+        isDrama: true
+      }).catch(() => []);
       // Hero 데이터 설정
       if (heroResult && heroResult.length > 0) {
         setHeroData(heroResult);

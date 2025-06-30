@@ -4,7 +4,7 @@ import Hero from '../../components/hero/Hero';
 import ContentSection from '../../components/content/ContentSection';
 import GenreDropdown from '../../components/dropdown/GenreDropdown';
 import Slider from '../../components/slider/Slider';
-//import { getTodayRecommendations } from '../../services/todayRecommendationService';
+import { getTodayRecommendations } from '../../services/todayRecommendationService';
 import { getPopularContent, getEmotionContent, getRecentContent } from '../../services/recommendationService';
 import { getCurrentUser } from '../../services/auth';
 import { getEmotionRecommendations } from '../../services/emotionRecommendationService';
@@ -63,11 +63,16 @@ const MoviePage = () => {
         heroResult = [];
       }
       // 인기/최신 슬라이더는 기존대로, 감정 슬라이더만 교체
-      const [popularResult, recentResult, emotionResult] = await Promise.all([
+      const [popularResult, recentResult] = await Promise.all([
         getPopularContent({ limit: 10, is_movie: true, is_drama: false, is_adult: false, genre: genreParam || undefined }).catch(() => []),
-        getRecentContent({ limit: 10, is_movie: true, is_drama: false, is_adult: false, genre: genreParam || undefined }).catch(() => []),
-        getEmotionRecommendations({ userIdx: userId, genre: genreParam, isMovie: true }).catch(() => [])
+        getRecentContent({ limit: 10, is_movie: true, is_drama: false, is_adult: false, genre: genreParam || undefined }).catch(() => [])
       ]);
+      // 감정 슬라이더 데이터 (is_movie=1)
+      const emotionResult = await getEmotionRecommendations({
+        userIdx: userId,
+        genre: genreParam,
+        isMovie: true
+      }).catch(() => []);
       // Hero 데이터 설정
       if (heroResult && heroResult.length > 0) {
         setHeroData(heroResult);
