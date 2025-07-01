@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import Query
 from ...core.services.csv_data_loader import csv_loader
 import pandas as pd
+import numpy as np
 
 router = APIRouter()
 
@@ -28,9 +29,12 @@ async def get_random_products():
     try:
         df = csv_loader.load_csv('product.csv')
         sample_df = df.sample(n=10) if len(df) >= 10 else df
+        # NaN, inf, -inf를 None으로 변환
+        sample_df = sample_df.replace([np.inf, -np.inf], np.nan)
+        products = sample_df.where(pd.notnull(sample_df), None).to_dict('records')
         return {
-            "count": len(sample_df),
-            "products": sample_df.to_dict('records')
+            "count": len(products),
+            "products": products
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading random products: {str(e)}")

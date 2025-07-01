@@ -3,20 +3,12 @@ import { useLocation } from 'react-router-dom';
 import Hero from '../../components/hero/Hero';
 import Slider from '../../components/slider/Slider';
 import GenreDropdown from '../../components/dropdown/GenreDropdown';
-//<<<<<<< HEAD
-//import { getTodayRecommendations } from '../../services/todayRecommendationService';
-import { getPopularContent, getEmotionContent, getRecentContent } from '../../services/recommendationService';
-// =======
-// import { getTodayRecommendations } from '../../services/todayRecommendationService';
-// import { getPopularContent, getRecentContent } from '../../services/recommendationService';
-// >>>>>>> 1d527afbbe30612450c791a4bd26d111094aff90
-import { getCurrentUser } from '../../services/auth';
+import { getPopularContent, getRecentContent } from '../../services/recommendationService';
 import { getEmotionRecommendations } from '../../services/emotionRecommendationService';
-import './HomePage.css';
+import { getCurrentUser } from '../../services/auth';
 import { getMyData } from "../../services/csvService";
 import { mapCsvItemToHero } from "../../utils/mapCsvItemToHero";
-
-
+import './HomePage.css';
 
 /**
  * 재사용 가능한 SliderSection 컴포넌트
