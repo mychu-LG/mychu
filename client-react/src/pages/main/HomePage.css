@@ -57,15 +57,15 @@
 
 /* 슬라이더별 개별 스타일 */
 #top10-slider-section .section-title {
-  color: #ffd700; /* 금색 - Top 10 강조 */
+  color: #ffffff; /* Top 10 강조 */
 }
 
 #emotion-slider-section .section-title {
-  color: #ff6b6b; /* 감정 - 따뜻한 빨강 */
+  color: #ffffff; /* 감정 */
 }
 
 #recent-slider-section .section-title {
-  color: #4ecdc4; /* 최신 - 청록색 */
+  color: #ffffff; /* 최신 */
 }
 
 .section-controls {
@@ -260,4 +260,14 @@
     width: 36px;
     height: 36px;
   }
+}
+
+/* 장르 필터 섹션 */
+.genre-filter-section {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1rem 1rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }

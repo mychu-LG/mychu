@@ -109,7 +109,7 @@
   background-size: cover;
   background-repeat: repeat-y;
   background-position: center top;
-  animation: slideBackground 60s linear infinite; /* 슬라이드 속도 */
+  animation: slideBackground 200s linear infinite; /* 슬라이드 속도 */
   z-index: 0;
 }
 

@@ -15,10 +15,10 @@
 
 .slider-container {
   position: relative;
-  overflow-x: auto;
   padding: 0 1rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  white-space: nowrap; /* 추가 */
 }
 
 .slider-container::-webkit-scrollbar {
@@ -29,7 +29,17 @@
   display: flex;
   gap: 1.5rem;
   padding-bottom: 1rem;
-  width: max-content;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;           /* Firefox */
+  -ms-overflow-style: none;        /* IE, Edge */
+}
+
+.card-container::-webkit-scrollbar {
+  display: none;                   /* Chrome, Safari, Opera */
 }
 
 .product-card {

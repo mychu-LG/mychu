@@ -227,7 +227,7 @@ export const searchAPI = {
     if (!query || query.length < 1) return [];
     
     const data = await fetchAPI(`/search/autocomplete?${new URLSearchParams({ 
-      query, 
+      query,
       limit: limit.toString() 
     }).toString()}`);
     return data.results || [];

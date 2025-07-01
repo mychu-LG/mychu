@@ -7,6 +7,10 @@ import os
 import logging
 import sys
 
+ #방금 추가 (성인물..)
+from fastapi.responses import StreamingResponse
+import requests
+
 # 라우터 import
 from server.api.routes.asset import router as asset_router  
 from server.api.routes.search import router as search_router
@@ -16,8 +20,11 @@ from server.api.routes.recommendations import router as rec_router
 from server.api.routes.log import router as log_router
 from server.api.routes.recommendation_hybrid import router as rec_hybrid_router
 from server.api.routes.emotion_recommendation import router as emotion_rec_router
+from server.api.routes.emotion_csv import router as emotion_csv_router
 #from server.api.routes.adult_recommendation import router as adult_rec_router
 from server.api.routes.today_recommendation import router as today_rec_router
+from server.api.routes.csv_data import router as csv_data_router
+from server.api.routes.product import router as product_router
 
 
 
@@ -36,7 +43,7 @@ router = APIRouter()
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", "http://localhost:5173", "http://localhost:8000", "http://localhost", "http://react:5173", "http://fastapi:8000"],
+    allow_origins=["http://localhost:5173", "http://localhost:8000", "http://localhost", "http://react:5173", "http://fastapi:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -86,13 +93,32 @@ app.include_router(asset_router,      prefix="/assets", tags=["assets"])
 app.include_router(log_router,        prefix="/logs",   tags=["logs"])
 app.include_router(search_router,     prefix="/search", tags=["search"])
 app.include_router(rec_test_router,   prefix="",        tags=["recommendation"])
-app.include_router(rec_hybrid_router, prefix="",        tags=["recommendation"])
-app.include_router(emotion_rec_router, prefix="",        tags=["emotion_recommendation"])
 app.include_router(rec_router,        prefix="",        tags=["recommendations"])
-app.include_router(today_rec_router, prefix="",        tags=["recommendation"])
+app.include_router(rec_hybrid_router, prefix="",        tags=["recommendation-hybrid"])
+app.include_router(emotion_rec_router, prefix="",        tags=["emotion-recommendation"])
+app.include_router(emotion_csv_router, prefix="",        tags=["emotion-csv"])
+app.include_router(today_rec_router,  prefix="",        tags=["today-recommendation"])
+app.include_router(csv_data_router,   prefix="",        tags=["csv-data"])
+app.include_router(product_router,    prefix="",        tags=["products"])
 
 # 로거 설정
 logger = logging.getLogger("uvicorn")
+
+ 
+# 추가 (성인관 이미지 로드)
+@app.get("/image-proxy")
+def image_proxy(url: str):
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0'  # 일부 서버는 이게 없으면 막음
+        }
+        res = requests.get(url, headers=headers, stream=True)
+        if res.status_code != 200:
+            raise Exception("이미지 요청 실패")
+        return StreamingResponse(res.raw, media_type=res.headers.get("Content-Type", "image/png"))
+    except Exception as e:
+        print(f"프록시 에러: {e}")
+        raise
 
 # 서버 시작 시 초기화 및 디버깅 로그 출력
 @app.on_event("startup")

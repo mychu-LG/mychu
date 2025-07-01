@@ -10,11 +10,14 @@
 
 html, body {
   height: 100%;
+  overflow-x: hidden; /* 가로 스크롤만 숨김 */
+  overflow-y: auto; /* 세로 스크롤은 허용 */
 }
 
 body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  position: relative; /* z-index가 작동하도록 */
 }
 
 img, picture, video, canvas, svg {

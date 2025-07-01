@@ -7,6 +7,8 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: visible !important; /* 확대된 카드가 잘리지 않도록 */
+  position: relative;
 }
 
 .app-header {

@@ -1,16 +1,110 @@
+/* DramaPage Component CSS - HomePage.css/MoviePage.css 기반 */
+
+:root {
+  --base-font-size: 16px;
+  --scale-ratio: 1;
+  --container-width: min(1280px, 90vw);
+  --header-height: 4rem;
+  --section-padding: clamp(2rem, 5vw, 4rem);
+}
+
 .drama-page {
   padding-bottom: 2rem;
   min-height: 100vh;
-  background: linear-gradient(to bottom, rgba(15, 17, 22, 0.5), rgba(15, 17, 22, 1));
+  background: #0f1116;
+  color: #fff;
 }
 
-.content-sections {
-  max-width: 1400px;
+.container {
+  width: min(1400px, 90vw);
   margin: 0 auto;
-  padding: 0 1rem;
-  gap: 3rem;
+  padding: 0 2rem;
+}
+
+.main-content {
+  padding: 2rem 0;
+  background-color: #0f1116;
+  min-height: 100vh;
+}
+
+.slider-section {
+  margin: 4rem 0;
+  padding: 0;
+}
+
+.slider-section:first-child {
+  margin-top: 2rem;
+}
+
+.section-header {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 0;
+}
+
+.section-title {
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.section-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.control-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.control-btn:hover { 
+  background: rgba(255,255,255,0.2); 
+}
+
+.slider-container {
+  position: relative;
+  background: transparent;
+  border: none;
+  padding: 0;
+  min-height: 280px;
+  transition: none;
+}
+
+.slider-container:hover {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-arrow-left { 
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='15 18 9 12 15 6'%3E%3C/polyline%3E%3C/svg%3E"); 
+}
+
+.icon-arrow-right { 
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'%3E%3C/polyline%3E%3C/svg%3E"); 
 }
 
 .loading-container,
@@ -37,39 +131,84 @@
   max-width: 600px;
 }
 
-/* 장르 필터 섹션 */
-.genre-filter-section {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem 1rem 1rem;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
+.error-container button {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
 }
 
-/* 반응형 디자인 */
+.error-container button:hover {
+  background: #2563eb;
+}
+
+.no-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.no-content p {
+  margin: 0;
+}
+
 @media (max-width: 768px) {
-  .content-sections {
-    padding: 0 0.5rem;
-    gap: 2rem;
+  .container {
+    padding: 0 1rem;
   }
-  
+  .slider-section {
+    margin: 2rem 0;
+    padding: 0 0.5rem;
+  }
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .section-title {
+    font-size: 1.4rem;
+  }
+  .slider-container {
+    padding: 0;
+    min-height: 240px;
+  }
+  .main-content {
+    padding: 1rem 0;
+  }
   .loading-container h2,
   .error-container h2 {
     font-size: 1.5rem;
   }
-  
   .error-container p {
     font-size: 1rem;
   }
 }
 
 @media (max-width: 480px) {
-  .content-sections {
-    gap: 1.5rem;
+  .slider-section {
+    margin: 1.5rem 0;
   }
-  
+  .section-title {
+    font-size: 1.2rem;
+  }
+  .slider-container {
+    padding: 0;
+    min-height: 200px;
+  }
   .drama-page {
     padding-bottom: 1rem;
+  }
+  .control-btn {
+    width: 36px;
+    height: 36px;
   }
 }

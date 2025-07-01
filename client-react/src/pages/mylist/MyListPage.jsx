@@ -2,148 +2,296 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './MyListPage.css';
 
-/**
- * 내가 찜한 콘텐츠 목록 페이지
- */
+// mock 찜한 콘텐츠 데이터
+const mockWishlist = [
+  {
+    idx: '101',
+    asset_nm: '찜한 영화 1',
+    genre: '코미디',
+    poster_path: 'https://picsum.photos/300/450?random=101',
+    rlse_year: '2023',
+  },
+  {
+    idx: '102',
+    asset_nm: '찜한 드라마 1',
+    genre: '스릴러',
+    poster_path: 'https://picsum.photos/300/450?random=102',
+    rlse_year: '2024',
+  },
+];
+
+// 성인 썸네일 고정 매핑 함수
+const getAdultImage = (idx) => {
+  const n = (parseInt(idx, 10) % 20) + 1;
+  return `/src/assets/images/adult/adult_${n}.png`;
+};
+
+const PAGE_SIZE = 20;
+
 const MyListPage = () => {
-  const [myList, setMyList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
+  const [activeTab, setActiveTab] = useState('watch-history');
+
+  // 프로필 상태
+  const [profile, setProfile] = useState({ nickname: '', joinDate: '' });
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState(null);
+
+  // 시청 기록 상태
+  const [watchHistory, setWatchHistory] = useState([]);
+  const [watchHistoryLoading, setWatchHistoryLoading] = useState(true);
+  const [watchHistoryError, setWatchHistoryError] = useState(null);
+  const [watchHistoryCount, setWatchHistoryCount] = useState(0);
+  const [page, setPage] = useState(1);
+
+  // 찜한 콘텐츠 상태
+  const [wishlist, setWishlist] = useState([]);
+  const [wishlistLoading, setWishlistLoading] = useState(true);
+  const [wishlistError, setWishlistError] = useState(null);
+
+  // 유저 idx (실제 서비스에서는 props/context 등으로 받아올 수 있음)
+  const userIdx = 541;
+
+  // 프로필 정보 fetch
   useEffect(() => {
-    const fetchMyList = async () => {
-      setLoading(true);
-      setError(null);
-      
+    const fetchProfile = async () => {
+      setProfileLoading(true);
+      setProfileError(null);
       try {
-        // 사용자의 찜 목록 가져오기
-        const response = await fetch('http://localhost:8000/logs/user/541?limit=50&offset=0');
-        
-        if (!response.ok) {
-          throw new Error('찜 목록을 가져오는데 실패했습니다.');
-        }
-        
-        const data = await response.json();
-        setMyList(data.items || []);
+        const res = await fetch(`http://localhost:8000/users/${userIdx}`);
+        if (!res.ok) throw new Error('프로필 정보를 불러오지 못했습니다.');
+        const data = await res.json();
+        setProfile({
+          nickname: data.nick_name || '',
+          joinDate: data.created_at ? data.created_at.slice(0, 10) : '',
+        });
       } catch (err) {
-        console.error('찜 목록 로드 중 오류:', err);
-        setError('찜 목록을 불러오는 중 오류가 발생했습니다.');
+        setProfileError('프로필 정보를 불러오는 중 오류가 발생했습니다.');
       } finally {
-        setLoading(false);
+        setProfileLoading(false);
       }
     };
-    
-    fetchMyList();
-  }, []);
+    fetchProfile();
+  }, [userIdx]);
 
-  // 콘텐츠 제거 핸들러
-  const handleRemoveItem = async (id) => {
-    try {
-      // API 호출하여 찜 목록에서 제거
-      const response = await fetch(`/api/user/mylist/${id}`, {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) {
-        throw new Error('콘텐츠 제거에 실패했습니다.');
+  // 시청 기록 fetch (페이지네이션 적용)
+  useEffect(() => {
+    const fetchWatchHistory = async () => {
+      setWatchHistoryLoading(true);
+      setWatchHistoryError(null);
+      try {
+        const offset = (page - 1) * PAGE_SIZE;
+        const res = await fetch(`http://localhost:8000/logs/user/${userIdx}?limit=${PAGE_SIZE}&offset=${offset}`);
+        if (!res.ok) throw new Error('시청 기록을 불러오지 못했습니다.');
+        const data = await res.json();
+        setWatchHistory(Array.isArray(data.logs) ? data.logs : []);
+        setWatchHistoryCount(data.count || 0);
+      } catch (err) {
+        setWatchHistoryError('시청 기록을 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setWatchHistoryLoading(false);
       }
-      
-      // 성공 시 로컬 상태 업데이트
-      setMyList(prevList => prevList.filter(item => item.idx !== id));
-    } catch (err) {
-      console.error('콘텐츠 제거 중 오류:', err);
-      alert('콘텐츠를 제거하는 중 오류가 발생했습니다.');
+    };
+    if (activeTab === 'watch-history') {
+      fetchWatchHistory();
     }
-  };
+  }, [userIdx, page, activeTab]);
 
-  // 샘플 데이터 (API 로드 실패 시 사용)
-  const sampleMyList = [
-    {
-      idx: '101',
-      asset_nm: '샘플 영화 1',
-      genre: '액션',
-      poster_path: 'https://picsum.photos/300/450',
-      rlse_year: '2023'
-    },
-    {
-      idx: '102',
-      asset_nm: '샘플 드라마 1',
-      genre: '로맨스',
-      poster_path: 'https://picsum.photos/300/450',
-      rlse_year: '2022'
-    },
-    {
-      idx: '103',
-      asset_nm: '샘플 영화 2',
-      genre: '코미디',
-      poster_path: 'https://picsum.photos/300/450',
-      rlse_year: '2023'
-    },
-    {
-      idx: '104',
-      asset_nm: '샘플 드라마 2',
-      genre: '스릴러',
-      poster_path: 'https://picsum.photos/300/450',
-      rlse_year: '2024'
+  // 찜한 콘텐츠 fetch
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      setWishlistLoading(true);
+      setWishlistError(null);
+      try {
+        // 1. 찜한 asset idx 리스트 가져오기
+        const res = await fetch(`http://localhost:8000/logs/mylist/${userIdx}`);
+        if (!res.ok) throw new Error('찜한 콘텐츠를 불러오지 못했습니다.');
+        const data = await res.json();
+        const assetIds = Array.isArray(data.mylist) ? data.mylist : [];
+        // 2. 각 asset의 상세 정보 fetch (병렬)
+        const detailPromises = assetIds.map(idx =>
+          fetch(`http://localhost:8000/assets/${idx}`).then(r => r.json())
+        );
+        const assetDetails = await Promise.all(detailPromises);
+        setWishlist(assetDetails);
+      } catch (err) {
+        setWishlistError('찜한 콘텐츠를 불러오는 중 오류가 발생했습니다.');
+        setWishlist([]);
+      } finally {
+        setWishlistLoading(false);
+      }
+    };
+    if (activeTab === 'wishlist') {
+      fetchWishlist();
     }
+  }, [userIdx, activeTab]);
+
+  // 전체 페이지 수 계산
+  const totalPages = Math.max(1, Math.ceil(watchHistoryCount / PAGE_SIZE));
+
+  // 탭별 데이터
+  const tabData = {
+    'watch-history': watchHistory,
+    'wishlist': wishlist,
+  };
+  const displayList = tabData[activeTab];
+
+  // 탭 뱃지 개수
+  const TABS = [
+    { key: 'watch-history', label: '시청 기록', badge: watchHistoryCount },
+    { key: 'wishlist', label: '찜한 콘텐츠', badge: wishlist.length },
   ];
 
-  // API 실패 시 샘플 데이터 사용
-  const displayList = myList.length > 0 ? myList : (loading ? [] : sampleMyList);
+  // 페이지네이션 UI
+  const renderPagination = () => (
+    <div className="pagination" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', margin: '2rem 0' }}>
+      <button onClick={() => setPage(page - 1)} disabled={page === 1}>&lt; 이전</button>
+      <span>{page} / {totalPages}</span>
+      <button onClick={() => setPage(page + 1)} disabled={page === totalPages}>다음 &gt;</button>
+    </div>
+  );
+
+  // 탭 변경 시 페이지 초기화
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab]);
 
   return (
     <div className="mylist-page">
-      <div className="mylist-header">
-        <h1>내가 찜한 콘텐츠</h1>
+      {/* 프로필/헤더 영역 */}
+      <div className="page-header">
+        <div className="user-profile">
+          <div className="profile-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div className="profile-info">
+            {profileLoading ? (
+              <h1 className="profile-name">로딩 중...</h1>
+            ) : profileError ? (
+              <h1 className="profile-name">오류</h1>
+            ) : (
+              <h1 className="profile-name">소금 님</h1>
+            )}
+            <p className="profile-join-date">
+              {profileLoading
+                ? '가입일: ...'
+                : profileError
+                ? '가입일: 오류'
+                : `가입일: ${profile.joinDate}`}
+            </p>
+          </div>
+        </div>
       </div>
-      
-      <div className="mylist-content">
-        {loading ? (
-          <div className="loading-indicator">
-            <div className="loading-spinner"></div>
-            <p>콘텐츠를 불러오는 중...</p>
-          </div>
-        ) : error ? (
-          <div className="error-message">
-            <p>{error}</p>
-            <button onClick={() => window.location.reload()}>다시 시도</button>
-          </div>
-        ) : displayList.length === 0 ? (
-          <div className="empty-list">
-            <h2>찜한 콘텐츠가 없습니다</h2>
-            <p>관심있는 영화나 드라마를 찜하면 이곳에 표시됩니다.</p>
-            <Link to="/" className="browse-button">콘텐츠 탐색하기</Link>
-          </div>
-        ) : (
-          <div className="mylist-grid">
-            {displayList.map(item => (
-              <div className="mylist-item" key={item.idx}>
-                <div className="mylist-poster">
-                  <Link to={`/content/${item.idx}`}>
-                    <img src={item.poster_path}
-                     alt={item.asset_nm}
-                     onError={(e) => {
-                      e.target.src = 'https://via.placeholder.com/300x450?text=No+Image';
-                    }}
-                     />
-                  </Link>
-                  <button 
-                    className="remove-button"
-                    onClick={() => handleRemoveItem(item.idx)}
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div className="mylist-item-info">
-                  <h3><Link to={`/content/${item.idx}`}>{item.asset_nm}</Link></h3>
-                  <div className="mylist-item-meta">
-                    <span>{item.rlse_year}</span>
-                    <span className="meta-divider">•</span>
-                    <span>{item.genre}</span>
+
+      {/* 탭 네비게이션 */}
+      <div className="tab-navigation">
+        {TABS.map(tab => (
+          <button
+            key={tab.key}
+            className={`tab-button${activeTab === tab.key ? ' active' : ''}`}
+            onClick={() => setActiveTab(tab.key)}
+            data-tab={tab.key}
+          >
+            {tab.label}
+            <span className="tab-badge">{tab.badge}개</span>
+          </button>
+        ))}
+      </div>
+
+      {/* 탭 콘텐츠 */}
+      <div className={`tab-content${activeTab === 'watch-history' ? ' active' : ''}`} id="watch-history">
+        {activeTab === 'watch-history' && (
+          <>
+            {/* {renderPagination()} */}
+            <div className="content-section">
+              <div className="content-grid grid-view">
+                {watchHistoryLoading ? (
+                  <div className="empty-state">
+                    <h3>시청 기록을 불러오는 중...</h3>
                   </div>
-                </div>
+                ) : watchHistoryError ? (
+                  <div className="empty-state">
+                    <h3>{watchHistoryError}</h3>
+                  </div>
+                ) : displayList.length === 0 ? (
+                  <div className="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="15" x2="16" y2="15"></line></svg>
+                    <h3>시청 기록이 없습니다</h3>
+                    <p>영화나 드라마를 시청하면 이곳에 표시됩니다.</p>
+                  </div>
+                ) : (
+                  displayList.map(item => (
+                    <div className="content-item" key={item.log_idx || item.idx}>
+                      <div className="item-poster">
+                        <Link to={`/content/${item.asset_idx || item.idx}`}>
+                          <img
+                            src={
+                              item.genre === '성인'
+                                ? getAdultImage(item.idx)
+                                : item.poster_path
+                            }
+                            alt={item.asset_nm}
+                            onError={e => { e.target.src = 'https://via.placeholder.com/300x450?text=No+Image'; }}
+                          />
+                        </Link>
+                      </div>
+                      <div className="item-info">
+                        <div className="item-title">{item.asset_nm}</div>
+                        <div className="item-meta">
+                          <span>{String(item.rlse_year).slice(0, 4)}</span>
+                          <span className="meta-divider">•</span>
+                          <span>{item.genre}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-            ))}
+            </div>
+            {renderPagination()}
+          </>
+        )}
+      </div>
+      <div className={`tab-content${activeTab === 'wishlist' ? ' active' : ''}`} id="wishlist">
+        {activeTab === 'wishlist' && (
+          <div className="content-section">
+            <div className="content-grid grid-view">
+              {displayList.length === 0 ? (
+                <div className="empty-state">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="15" x2="16" y2="15"></line></svg>
+                  <h3>찜한 콘텐츠가 없습니다</h3>
+                  <p>관심있는 영화나 드라마를 찜하면 이곳에 표시됩니다.</p>
+                </div>
+              ) : (
+                displayList.map(item => (
+                  <div className="content-item" key={item.idx}>
+                    <div className="item-poster">
+                      <Link to={`/content/${item.asset_idx || item.idx}`}>
+                        <img
+                          src={
+                            item.genre === '성인'
+                              ? getAdultImage(item.idx)
+                              : item.poster_path
+                          }
+                          alt={item.asset_nm}
+                          onError={e => { e.target.src = 'https://via.placeholder.com/300x450?text=No+Image'; }}
+                        />
+                      </Link>
+                    </div>
+                    <div className="item-info">
+                      <div className="item-title">{item.asset_nm}</div>
+                      <div className="item-meta">
+                        <span>{String(item.rlse_year).slice(0, 4)}</span>
+                        <span className="meta-divider">•</span>
+                        <span>{item.genre}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
       </div>

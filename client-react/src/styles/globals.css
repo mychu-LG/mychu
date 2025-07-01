@@ -2,11 +2,20 @@
 @import './variables.css';
 @import './reset.css';
 
+/* React 루트 요소 설정 */
+#root {
+  overflow: visible !important;
+  position: relative;
+  min-height: 100vh;
+}
+
 body {
   font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
   background: linear-gradient(135deg, var(--color-background) 0%, var(--color-background-light) 50%, var(--color-background-dark) 100%);
   color: var(--color-text);
   min-height: 100vh;
+  overflow-x: hidden; /* 가로 스크롤만 숨김 */
+  overflow-y: auto; /* 세로 스크롤은 허용 */
 }
 
 /* 스크롤바 스타일링 */
@@ -15,16 +24,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: #000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #000, #111, #222);
+  background: #6b7280;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #000, #111, #222);
+  background: #6b7280;
 }
 
 /* 공통 유틸리티 클래스 */
@@ -32,6 +41,8 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 var(--spacing-md);
+  overflow: visible !important; /* 확대된 카드가 잘리지 않도록 */
+  position: relative;
 }
 
 .text-center { text-align: center; }

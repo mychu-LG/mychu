@@ -4,11 +4,15 @@
   min-height: 100vh;
   background-color: #0f1116;
   color: #ffffff;
+  overflow: visible !important; /* 확대된 카드가 잘리지 않도록 */
+  position: relative;
 }
 
 .main-content {
   flex: 1;
   padding-top: 70px; /* 헤더 높이에 맞춰 조정 */
+  overflow: visible !important; /* 확대된 카드가 잘리지 않도록 */
+  position: relative;
 }
 
 /* 반응형 스타일 */

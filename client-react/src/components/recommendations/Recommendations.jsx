@@ -107,29 +107,42 @@ const Recommendations = ({ type = 'top', limit = 10, title = '추천 콘텐츠',
     <div className="recommendations-section">
       <h2 className="section-title">{title}</h2>
       <div className="recommendations-grid">
-        {items.map((item, index) => (
-          <div 
-            key={item.id || item.idx || index}
-            className="recommendation-card"
-            onClick={() => handleContentClick(item)}
-          >
-            <div className="card-image">
-              <img 
-                src={item.poster_path} 
-                alt={item.asset_nm}
-                loading="lazy"
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/300x450?text=No+Image';
-                }}
-              />
+        {items
+          .filter(item =>
+            item.poster_path &&
+            item.poster_path.trim() !== '' &&
+            item.poster_path.trim().toLowerCase() !== 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/no-image-placeholder.svg/1200px-no-image-placeholder.svg.png' &&
+            !item.poster_path.toLowerCase().includes('placeholder') &&
+            !item.poster_path.toLowerCase().includes('noimage') &&
+            !item.poster_path.toLowerCase().includes('no+image') &&
+            !item.poster_path.toLowerCase().includes('no-image') &&
+            !item.poster_path.toLowerCase().includes('no_image') &&
+            !item.poster_path.toLowerCase().includes('notfound') &&
+            !item.poster_path.toLowerCase().includes('unavailable')
+          )
+          .map((item, index) => (
+            <div 
+              key={item.id || item.idx || index}
+              className="recommendation-card"
+              onClick={() => handleContentClick(item)}
+            >
+              <div className="card-image">
+                <img 
+                  src={item.poster_path} 
+                  alt={item.asset_nm}
+                  loading="lazy"
+                  onError={e => {
+                    e.currentTarget.closest('.recommendation-card').style.display = 'none';
+                  }}
+                />
+              </div>
+              <div className="card-info">
+                <h3 className="card-title">{item.asset_nm}</h3>
+                {item.genre && <span className="card-genre">{item.genre}</span>}
+                {item.release_year && <span className="card-year">{item.release_year}</span>}
+              </div>
             </div>
-            <div className="card-info">
-              <h3 className="card-title">{item.asset_nm}</h3>
-              {item.genre && <span className="card-genre">{item.genre}</span>}
-              {item.release_year && <span className="card-year">{item.release_year}</span>}
-            </div>
-          </div>
-        ))}
+          ))}
       </div>
     </div>
   );

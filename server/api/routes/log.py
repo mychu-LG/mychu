@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+from sqlalchemy import func, desc, and_
 
 from server.core.database import get_db
-from server.models.user import VodLog
+from server.models.user import VodLog, MyList
 from server.models.asset import Asset
 from pydantic import BaseModel, ConfigDict
 
@@ -47,6 +48,11 @@ class UserVodLogsResponse(BaseModel):
     count: int
     logs: List[UserVodLogWithAsset]
 
+class MyListAddRequest(BaseModel):
+    user_idx: int
+    asset_idx: int
+    action: bool = True
+
 @router.get("/user/{user_idx}", response_model=UserVodLogsResponse)
 def get_user_vod_logs(
     user_idx: int,
@@ -79,20 +85,33 @@ def get_user_vod_logs(
     user_exists = db.query(db.query(VodLog).filter(VodLog.user_idx == user_idx).exists()).scalar()
     if not user_exists:
         raise HTTPException(status_code=404, detail=f"User with ID {user_idx} not found or has no viewing history")
-    
-    # Get user's VOD logs joined with complete asset information
+
+    # 1. 서브쿼리: 각 asset_idx별로 가장 최근(strt_dt) log만 추출
+    subq = (
+        db.query(
+            VodLog.asset_idx,
+            func.max(VodLog.strt_dt).label('max_strt_dt')
+        )
+        .filter(VodLog.user_idx == user_idx)
+        .group_by(VodLog.asset_idx)
+        .subquery()
+    )
+
+    # 2. 메인 쿼리: 서브쿼리와 VodLog, Asset 조인
     logs_query = (
         db.query(VodLog, Asset)
+        .join(subq, and_(
+            VodLog.asset_idx == subq.c.asset_idx,
+            VodLog.strt_dt == subq.c.max_strt_dt
+        ))
         .join(Asset, VodLog.asset_idx == Asset.idx)
-        .filter(VodLog.user_idx == user_idx)
         .order_by(VodLog.strt_dt.desc())
         .offset(offset)
         .limit(limit)
     )
-    
+
     logs_with_assets = []
     for log, asset in logs_query:
-        # Combine log and asset attributes into a single object
         log_dict = {
             # VodLog fields
             "log_idx": log.log_idx,
@@ -101,7 +120,6 @@ def get_user_vod_logs(
             "strt_dt": log.strt_dt,
             "use_tms": log.use_tms,
             "feedback": log.feedback,
-            
             # Asset fields
             "idx": asset.idx,
             "full_asset_id": asset.full_asset_id,
@@ -124,10 +142,10 @@ def get_user_vod_logs(
             "smry_shrt": asset.smry_shrt if hasattr(asset, "smry_shrt") else None
         }
         logs_with_assets.append(UserVodLogWithAsset(**log_dict))
-    
-    # Get total count for pagination info
-    total_count = db.query(VodLog).filter(VodLog.user_idx == user_idx).count()
-    
+
+    # 전체 중복 제거된 개수
+    total_count = db.query(subq).count()
+
     return UserVodLogsResponse(
         count=total_count,
         logs=logs_with_assets
@@ -156,3 +174,56 @@ def get_popular_assets(
     # This would involve aggregating view counts from vod_log
     # and joining with assets table for details
     pass
+
+@router.post("/mylist/")
+def add_to_mylist(
+    request: MyListAddRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        exists = db.query(MyList).filter_by(user_idx=request.user_idx, asset_idx=request.asset_idx).first()
+        if exists:
+            return {"message": "이미 찜한 콘텐츠입니다."}
+        new_item = MyList(
+            user_idx=request.user_idx,
+            asset_idx=request.asset_idx,
+            action=request.action,
+            time_stamp=datetime.utcnow()
+        )
+        db.add(new_item)
+        db.commit()
+        db.refresh(new_item)
+        return {"msg": "찜 등록 완료", "data": {
+            "user_idx": new_item.user_idx,
+            "asset_idx": new_item.asset_idx,
+            "action": new_item.action,
+            "time_stamp": new_item.time_stamp
+        }}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"DB 저장 실패: {e}")
+
+@router.delete("/mylist/")
+def remove_from_mylist(
+    request: MyListAddRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        item = db.query(MyList).filter_by(user_idx=request.user_idx, asset_idx=request.asset_idx).first()
+        if not item:
+            return {"message": "이미 찜 목록에 없습니다."}
+        db.delete(item)
+        db.commit()
+        return {"message": "찜 목록에서 삭제되었습니다."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"DB 삭제 실패: {e}")
+
+@router.get("/mylist/{user_idx}")
+def get_mylist(
+    user_idx: int,
+    db: Session = Depends(get_db)
+):
+    items = db.query(MyList).filter_by(user_idx=user_idx, action=True).all()
+    asset_ids = [item.asset_idx for item in items]
+    return {"user_idx": user_idx, "mylist": asset_ids}

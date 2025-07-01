@@ -1,27 +1,32 @@
-/* 전체 페이지 배경 */
+/* 전체 페이지 레이아웃 */
 .signup-page {
   min-height: 100vh;
-  background: url('../../assets/images/backgrounds/login_image3.png') center/cover no-repeat;
-  color: white;
   font-family: 'Inter', sans-serif;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  color: white;
 }
 
-/* 어두운 배경 오버레이 */
-.signup-page::before {
-  content: "";
+/* 어두운 오버레이 */
+.background-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.3);
   z-index: 0;
 }
 
-/* 상단 로고 */
+/* 로고 */
 .login-logo {
   position: absolute;
   top: 2rem;
   left: 2rem;
-  z-index: 10;
+  z-index: 2;
   cursor: pointer;
 }
 
@@ -36,19 +41,22 @@
   transform: scale(1.03);
 }
 
-/* 폼 콘텐츠 */
+/* 회원가입 폼 컨테이너 */
 .signup-content {
-  position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 5rem 1.5rem 2rem;
+  max-width: 460px;
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1.1rem;
+  padding: 3rem 2rem;
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
 }
 
+/* 제목 및 부제목 */
 .signup-title {
   font-size: 1.8rem;
   font-weight: bold;
@@ -59,61 +67,54 @@
   font-size: 1rem;
   text-align: center;
   color: #ccc;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 /* 입력 필드 */
 .form-input {
   width: 100%;
-  padding: 1rem 1rem;
-  background-color: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  border-radius: 6px;
+  padding: 1rem;
   font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.3);
+  color: white;
   outline: none;
   transition: border-color 0.2s ease;
-}
-
-.form-input.valid {
-  border-color: #555;
-}
-
-.form-input.invalid {
-  border-color: #f76e6e;
 }
 
 .form-input::placeholder {
   color: #aaa;
 }
 
+.form-input:focus {
+  border-color: #1ac79d;
+}
+
+/* 유효성 클래스 */
+.form-input.invalid {
+  border-color: #f76e6e;
+}
+
+.form-input.valid:focus {
+  border-color: #1ac79d;
+}
+
 /* 에러 메시지 */
 .input-error {
   font-size: 0.85rem;
   color: #f76e6e;
-  margin-top: -0.5rem;
-  padding-left: 0.2rem;
+  margin-top: -0.6rem;
+  margin-bottom: 0.2rem;
+  padding-left: 0.3rem;
 }
 
-/* 비밀번호 강도 */
-.password-strength {
-  font-size: 0.85rem;
-  margin-top: -0.5rem;
-}
-
-.password-strength.very-weak { color: #f76e6e; }
-.password-strength.weak { color: #f7a36e; }
-.password-strength.medium { color: #f7db6e; }
-.password-strength.strong { color: #8ff76e; }
-.password-strength.very-strong { color: #1ac79d; }
-
-/* 비밀번호 wrapper */
+/* 비밀번호 토글 버튼 */
 .password-wrapper {
   position: relative;
   width: 100%;
 }
 
-/* 눈 아이콘 버튼 */
 .password-toggle {
   position: absolute;
   top: 50%;
@@ -122,82 +123,101 @@
   background: none;
   border: none;
   cursor: pointer;
+  padding: 0;
   display: flex;
+  align-items: center;
+  justify-content: center;
   color: white;
   opacity: 0.7;
-  padding: 0;
 }
 
 .password-toggle:hover {
   opacity: 1;
 }
 
+/* 비밀번호 강도 표시 */
+.password-strength {
+  font-size: 0.9rem;
+  margin-top: -0.2rem;
+  padding-left: 0.2rem;
+}
+
+.password-strength.very-weak {
+  color: #f76e6e;
+}
+.password-strength.weak {
+  color: #f7a36e;
+}
+.password-strength.medium {
+  color: #f7db6e;
+}
+.password-strength.strong {
+  color: #8ff76e;
+}
+.password-strength.very-strong {
+  color: #1ac79d;
+}
+
 /* 체크박스 */
 .checkbox-label {
+  font-size: 0.95rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.95rem;
   color: #ccc;
 }
 
-.checkbox-label input {
+.checkbox-label input[type="checkbox"] {
   accent-color: #1ac79d;
 }
 
-/* 회원가입 버튼 */
-/* 비활성 상태 (기본) */
+/* 버튼 */
 .signup-btn {
   padding: 1rem;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: bold;
-  background-color: #555;
-  border: none;
-  color: white;
   border-radius: 6px;
+  border: none;
+  background-color: #2a2a2a;
+  color: white;
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.4;
   transition: background 0.2s ease, opacity 0.2s ease;
 }
 
-/* 활성 상태 */
 .signup-btn.active {
   background-color: #1ac79d;
-  cursor: pointer;
+  color: black;
   opacity: 1;
-  pointer-events: auto;
+  cursor: pointer;
 }
 
-/* 불필요한 hover 제거 */
-.signup-btn:hover {
-  background-color: #1ac79d; /* optional: 유지해도 무방 */
+.signup-btn.active:hover {
+  background-color: #18b498;
 }
 
-/* 하단 */
+/* 하단 링크 */
 .signup-footer {
   margin-top: 1.5rem;
   font-size: 0.95rem;
-  color: #ccc;
   text-align: center;
+  color: #ccc;
 }
 
 .signup-footer button {
   background: none;
   border: none;
   color: #1ac79d;
+  font-weight: 500;
   margin-left: 0.4rem;
   cursor: pointer;
-  font-weight: 500;
-}
-
-.signup-footer button:hover {
   text-decoration: underline;
 }
 
 /* 반응형 */
 @media (max-width: 480px) {
   .signup-content {
-    padding: 4rem 1rem 2rem;
+    padding: 2rem 1.5rem;
   }
 
   .signup-title {
@@ -205,6 +225,6 @@
   }
 
   .signup-btn {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 }

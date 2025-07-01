@@ -5,7 +5,7 @@ import './SearchPage.css';
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
 /**
- * 검색 결과 페이지 컴포넌트 - HTML/CSS를 React로 구현
+ * 검색 결과 페이지 컴포넌트
  */
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
@@ -197,13 +197,6 @@ const SearchPage = () => {
                             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                           </svg>
                         </button>
-                      </div>
-                    </div>
-                    <div className="item-info">
-                      <h3 className="item-title">{title}</h3>
-                      <div className="item-meta">
-                        <span className="item-genre">{genre}</span>
-                        {year && <span className="item-year">{year}</span>}
                       </div>
                     </div>
                   </div>

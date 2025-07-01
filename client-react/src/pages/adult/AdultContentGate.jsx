@@ -32,10 +32,10 @@ const AdultContentGate = ({ onSuccess, onCancel }) => {
       }
       
       // 방법 3: 기본값 (테스트용)
-      return 541;
+      return 449791;
     } catch (error) {
       console.error('사용자 ID 가져오기 실패:', error);
-      return 541;
+      return 449791;
     }
   };
 

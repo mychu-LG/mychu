@@ -38,126 +38,85 @@ class SimilarContentResponse(BaseModel):
 @router.get("/recommendation/similar/{asset_idx}", response_model=SimilarContentResponse)
 async def get_similar_content(
     asset_idx: int,
-    db: Session = Depends(get_db),
-    top_n: int = Query(10, ge=1, le=50),
-    include_adult: bool = False
+    top_n: int = Query(10, ge=1, le=50)
 ):
     """
-    하이브리드 특성(장르, 감정, 줄거리 요약)을 기반으로 유사한 콘텐츠 추천을 제공
-    
-    파라미터:
-    - asset_idx: 유사한 콘텐츠를 찾고자 하는 기준 콘텐츠의 ID
-    - top_n: 반환할 서로 다른 시리즈(super_asset_nm)의 개수 (기본값: 10, 최대: 50)
-    - include_adult: 성인 콘텐츠를 추천 결과에 포함할지 여부 (기본값: False)
-    
-    필터:
-    - 현재 콘텐츠와 동일한 시리즈(super_asset_nm)는 제외됩니다
-    - 결과는 서로 다른 시리즈(super_asset_nm)별로 최대 1개씩 포함됩니다
-    
-    응답 내용:
-    - 서로 다른 시리즈(super_asset_nm)의 콘텐츠가 top_n개 포함됩니다
-    - rank: 유사도 기반 순위
-    - idx: 콘텐츠 ID
-    - content_nm: 콘텐츠 이름
-    - similarity: 유사도 점수 (0-1 사이 값)
-    - 기타 에셋 관련 정보
+    hybrid_vectors(genre_emotion_smry).npy 기반의 하이브리드 임베딩 유사 콘텐츠 추천
+    - 장르+감정 기반 벡터로 코사인 유사도 계산
+    - is_main, is_adult, 자기 자신 제외
+    - top_n개만 반환
     """
-    try:
-        import logging
-        import time
-        
-        logger = logging.getLogger("uvicorn")
-        start_time = time.time()
-        logger.info(f"Processing recommendation for asset_idx={asset_idx}, top_n={top_n}")
-        
-        # 현재 콘텐츠 정보 가져오기 - super_asset_nm을 확인하기 위해 모든 필요 필드 조회
-        target_asset = db.query(Asset).filter(Asset.idx == asset_idx).first()
-        
-        if not target_asset:
-            logger.warning(f"Asset with ID {asset_idx} not found in database")
-            raise HTTPException(status_code=404, detail=f"Asset with ID {asset_idx} not found")
-        
-        # 현재 콘텐츠의 시리즈명 (필터링에 사용)
-        current_super_asset = target_asset.super_asset_nm
-        logger.info(f"Current super_asset_nm: {current_super_asset}")
-        
-        # 콘텐츠 매핑 초기화 (필요한 경우)
-        if not recommender.is_content_mapping_initialized:
-            logger.info("Content mapping not initialized. Initializing now.")
-            main_assets = db.query(
-                Asset.idx, Asset.asset_nm, Asset.unique_asset_id, 
-                Asset.super_asset_nm, Asset.is_adult, Asset.is_movie,
-                Asset.is_drama, Asset.is_main, Asset.poster_path
-            ).all()
-            logger.info(f"Retrieved {len(main_assets)} total assets from database")
-            
-            recommender.initialize_content_mapping(main_assets)
-        
-        # 매핑 가져오기
-        content_indices = recommender.content_mapping["content_indices"]
-        asset_details = recommender.content_mapping["asset_details"]
-        
-        # 타겟 에셋이 매핑에 있는지 확인
-        if asset_idx not in content_indices:
-            logger.warning(f"Asset {asset_idx} not found in content mapping")
-            raise HTTPException(status_code=404, detail=f"Asset {asset_idx} not suitable for recommendations")
-        
-        # 벡터 인덱스 가져오기
-        target_idx = content_indices[asset_idx]
-        logger.info(f"Target idx in embedding space: {target_idx}")
-        
-        # 추천 계산 - 충분한 결과를 얻기 위해 많이 요청
-        rec_start_time = time.time()
-        basic_results = recommender.get_similar_contents(
-            target_idx,
-            top_n * 10,  # 필터링 후에도 충분한 결과를 확보하기 위해 여유있게 가져옴
-            include_adult
-        )
-        logger.info(f"Recommendation computation took {time.time() - rec_start_time:.2f} seconds")
-        
-        # 시리즈별 필터링 (중복 제거 및 타겟 시리즈 제외)
-        enhanced_results = []
-        seen_super_assets = set()  # 이미 처리한 시리즈 추적
-        
-        for item in basic_results:
-            asset_id = item["idx"]
-            details = asset_details.get(asset_id, {})
-            super_asset_nm = details.get("super_asset_nm", "")
-            
-            # 현재 콘텐츠와 같은 시리즈는 건너뛰기
-            if super_asset_nm == current_super_asset:
-                continue
-                
-            # 이미 해당 시리즈의 콘텐츠가 포함되어 있으면 건너뛰기
-            if super_asset_nm in seen_super_assets:
-                continue
-                
-            # 새로운 시리즈 추가
-            seen_super_assets.add(super_asset_nm)
-            
-            enhanced_item = {
-                **item,  # 원본 필드
-                **details  # 추가 에셋 세부 정보
-            }
-            enhanced_results.append(SimilarContentItem(**enhanced_item))
-            
-            # 요청한 개수만큼 서로 다른 시리즈를 찾으면 중단
-            if len(enhanced_results) >= top_n:
-                break
-        
-        # 결과 로깅
-        total_time = time.time() - start_time
-        logger.info(f"Filtered to {len(enhanced_results)} unique series recommendations")
-        logger.info(f"Total processing time: {total_time:.2f} seconds")
-        
-        return SimilarContentResponse(items=enhanced_results)
-    
-    except Exception as e:
-        import traceback
-        logger = logging.getLogger("uvicorn")
-        logger.error(f"Error in get_similar_content: {str(e)}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+    import numpy as np
+    from sklearn.neighbors import NearestNeighbors
+    import logging
+
+    logger = logging.getLogger("uvicorn")
+    # content mapping 및 벡터 준비
+    mapping = recommender.content_mapping
+    hybrid_vectors = recommender.hybrid_vectors
+    content_ids = list(mapping["content_ids"].values())
+    content_names = list(mapping["content_names"].values())
+    is_main_map = mapping["is_main_map"]
+    is_adult_map = mapping["is_adult_map"]
+
+    # asset_idx가 content_indices에 있는지 확인
+    content_indices = mapping["content_indices"]
+    if asset_idx not in content_indices:
+        raise HTTPException(status_code=404, detail=f"Asset {asset_idx} not found in content mapping")
+    target_content_idx = content_indices[asset_idx]
+
+    # (1) 추천 대상 후보 필터링
+    candidate_indices = [
+        i for i, cid in enumerate(content_ids)
+        if is_main_map.get(cid, False) and is_adult_map.get(cid) == 0 and i != target_content_idx
+    ]
+    if not candidate_indices:
+        raise HTTPException(status_code=404, detail="No candidate contents found")
+    candidate_vectors = hybrid_vectors[candidate_indices]
+
+    # (2) KNN 모델 학습
+    knn_model = NearestNeighbors(n_neighbors=min(len(candidate_vectors), top_n*5), metric='cosine')
+    knn_model.fit(candidate_vectors)
+
+    # (3) 유사 콘텐츠 탐색
+    distances, indices = knn_model.kneighbors([hybrid_vectors[target_content_idx]])
+
+    results = []
+    for idx_within_candidates, dist in zip(indices[0], distances[0]):
+        similarity = round(1 - dist, 4)
+        if similarity >= 0.9999:
+            continue
+        real_idx = candidate_indices[idx_within_candidates]
+        full_id = content_ids[real_idx]
+        results.append({
+            'rank': len(results) + 1,
+            'idx': full_id,
+            'content_nm': content_names[real_idx],
+            'similarity': similarity
+        })
+        if len(results) >= top_n:
+            break
+
+    # asset_details에서 추가 정보 보강
+    asset_details = mapping["asset_details"]
+    items = []
+    for r in results:
+        details = asset_details.get(r['idx'], {})
+        items.append(SimilarContentItem(
+            rank=r['rank'],
+            idx=r['idx'],
+            content_nm=r['content_nm'],
+            similarity=r['similarity'],
+            asset_nm=details.get('asset_nm', r['content_nm']),
+            unique_asset_id=details.get('unique_asset_id', ''),
+            super_asset_nm=details.get('super_asset_nm', ''),
+            is_adult=details.get('is_adult', False),
+            is_movie=details.get('is_movie', False),
+            is_drama=details.get('is_drama', False),
+            is_main=details.get('is_main', False),
+            poster_path=details.get('poster_path', None)
+        ))
+    return SimilarContentResponse(items=items)
 
 @router.get("/recommendation/hybrid/user/{user_idx}", response_model=SimilarContentResponse)
 async def get_hybrid_recommendations_for_user(
@@ -413,9 +372,3 @@ async def get_hybrid_recommendations_for_user(
         logger.error(f"Error in get_hybrid_recommendations_for_user: {str(e)}")
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
-
-
-
-

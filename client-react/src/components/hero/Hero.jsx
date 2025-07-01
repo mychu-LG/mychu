@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import './Hero.css';
+import { Link } from 'react-router-dom';
+import { getMyData } from "../../services/csvService";
 
 /**
  * 히어로 슬라이더 컴포넌트 - props 기반 순수 컴포넌트
@@ -100,20 +102,22 @@ const Hero = ({ items = [], loading = false, error = null }) => {
             <div key={item.idx || index} className="hero-slide hero-content">
               <div className="hero-poster">
                 <div className="poster-container">
-                  <img 
-                    className={`poster-image main-hero-poster-img-${index}`}
-                    src={item.poster_path || 'https://placehold.co/300x450?text=No+Image'} 
-                    alt={`${item.asset_nm} 포스터`}
-                    loading="lazy"
-                    onError={(e) => {
-                      console.warn(`이미지 로드 실패: ${item.poster_path}`);
-                      e.target.src = 'https://placehold.co/300x450/333/fff?text=이미지\n없음';
-                    }}
-                    onLoad={(e) => {
-                      e.target.style.opacity = '1';
-                    }}
-                    style={{ opacity: '0', transition: 'opacity 0.3s ease-in-out' }}
-                  />
+                  <Link to={`/content/${item.idx}`}>
+                    <img 
+                      className={`poster-image main-hero-poster-img-${index}`}
+                      src={item.poster_path || 'https://placehold.co/300x450?text=No+Image'} 
+                      alt={`${item.asset_nm} 포스터`}
+                      loading="lazy"
+                      onError={(e) => {
+                        console.warn(`이미지 로드 실패: ${item.poster_path}`);
+                        e.target.src = 'https://placehold.co/300x450/333/fff?text=이미지\n없음';
+                      }}
+                      onLoad={(e) => {
+                        e.target.style.opacity = '1';
+                      }}
+                      style={{ opacity: '0', transition: 'opacity 0.3s ease-in-out' }}
+                    />
+                  </Link>
                   <div className="poster-glow"></div>
                 </div>
               </div>

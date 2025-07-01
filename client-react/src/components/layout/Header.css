@@ -10,7 +10,7 @@
   background: rgba(15, 17, 22, 0.95);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid #2a2c35;
-  height: 70px; /* --header-height 대신 명시적 값으로 설정 */
+  height: 70px;
 }
 
 .container {
@@ -20,6 +20,7 @@
 }
 
 .header-content {
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -32,9 +33,11 @@
 }
 
 .header-right {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 1rem;
+  height: 48px;
 }
 
 .logo-link {
@@ -65,65 +68,6 @@
 
 .nav-link:hover {
   color: #ccc;
-}
-
-/* ========== 검색 ========== */
-.search-container {
-  position: relative;
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .search-container {
-    display: block;
-  }
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1rem;
-  height: 1rem;
-  color: #9ca3af;
-}
-
-.search-input {
-  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
-  background: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 0.375rem;
-  color: #fff;
-  width: 16rem;
-  font-size: 0.875rem;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #3b82f6; /* --color-primary 대신 명시적 색상 */
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.search-input::placeholder {
-  color: #9ca3af;
-}
-
-.search-suggestions {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background: #222; /* --color-background-alt 대신 명시적 색상 */
-  border-radius: 0 0 4px 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-  max-height: 400px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: block;
-  margin-top: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .suggestion-item {

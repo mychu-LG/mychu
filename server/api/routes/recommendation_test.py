@@ -93,13 +93,14 @@ def get_popular_recommendations(
     genre: Optional[str] = Query(None, description="특정 장르로 필터링 (!=로맨스: 제외)"),
     db: Session = Depends(get_db),
 ):
-
-    # 기본 쿼리 - 하드코딩된 장르 필터 제거
+    # 1. 이미지 없는 것 먼저 제외 (여러 패턴)
     query = (
         db.query(Asset)
         .join(Score, Asset.idx == Score.asset_idx)
         .options(joinedload(Asset.scores))
-        .filter(Asset.is_adult == is_adult)  # 하드코딩된 장르 필터 제거
+        .filter(Asset.is_adult == is_adult)
+        .filter(~Asset.poster_path.ilike("%No-Image-Placeholder.svg%"))
+        .filter(~Asset.poster_path.ilike("%upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg%"))
     )
 
     if is_main:
@@ -108,11 +109,8 @@ def get_popular_recommendations(
         query = query.filter(Asset.is_movie == is_movie)
     if is_drama:
         query = query.filter(Asset.is_drama == is_drama)
-        
-    # ✅ c_rate 필터 추가
     query = query.filter(Score.c_rate > 0.3)
 
-    # 장르 필터링 - test 엔드포인트와 동일한 방식 사용
     if genre:
         if genre.startswith("!="):
             exclude_genre = genre[2:].strip()
@@ -120,13 +118,9 @@ def get_popular_recommendations(
         else:
             query = query.filter(Asset.genre.ilike(f"%{genre}%"))
 
-    # 인기순 정렬하고 제한
+    # 2. 인기순 정렬 후 limit
     rows = query.order_by(Score.cnt.desc()).limit(n).all()
 
-    # 추가: 일단 이미지 없는거 제외
-    query = query.filter(~Asset.poster_path.ilike("%upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg%"))
-    
-    # 결과 변환
     items = []
     for r in rows:
         try:
@@ -171,15 +165,24 @@ def get_recent_recommendations(
     """
     최신 추천 API - 출시년도 기준 최신순
     """
-    
-    # Asset 전체 컬럼을 select
+    # 1. 이미지 없는 것 먼저 제외 (여러 패턴)
     query = db.query(Asset)
-    
-    # 기본 필터 적용
     query = query.filter(Asset.is_adult == is_adult)
-    
+    query = query.filter(~Asset.poster_path.ilike("%No-Image-Placeholder.svg%"))
+    query = query.filter(~Asset.poster_path.ilike("%upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg%"))
+
     if is_main:
         query = query.filter(Asset.is_main == is_main)
+
+    # 영화/드라마 필터 (합집합 방식)
+    if is_movie and not is_drama:
+        query = query.filter(Asset.is_movie == True)
+    elif is_drama and not is_movie:
+        query = query.filter(Asset.is_drama == True)
+    elif not is_movie and not is_drama:
+        pass  # 전체 (필터 없음)
+    # 둘 다 True면 전체 (필터 없음)
+
     if genre:
         if genre.startswith("!="):
             exclude_genre = genre[2:].strip()
@@ -187,12 +190,9 @@ def get_recent_recommendations(
         else:
             query = query.filter(Asset.genre.ilike(f"%{genre}%"))
 
-    # 추가: 일단 이미지 없는거 제외
-    query = query.filter(~Asset.poster_path.ilike("%No-Image-Placeholder.svg%"))
-
-    # ⚠️ 핵심 수정: limit(n) 추가!
+    # 2. 최신순 정렬 후 limit
     rows = query.order_by(Asset.rlse_year.desc()).limit(n).all()
-    
+
     items = []
     for r in rows:
         try:

@@ -15,6 +15,10 @@ import MyListPage from './pages/mylist/MyListPage';
 import SettingPage from './pages/setting/SettingPage';
 import ContentDetailsPage from './pages/contents/ContentDetailsPage';
 
+// OAuth 콜백 처리
+import NaverCallback from './pages/account_oauth/NaverCallback';
+import KakaoCallback from './pages/account_oauth/KakaoCallback';
+
 // 레이아웃 컴포넌트
 import MainLayout from './components/layout/MainLayout';
 
@@ -34,6 +38,10 @@ const AppRoutes = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/account" element={<AccountSelectPage />} />
 
+      {/* OAuth 콜백 경로 */}
+      <Route path="/login/naver/code" element={<NaverCallback />} />
+      <Route path="/login/kakao/code" element={<KakaoCallback />} />
+      
       {/* 메인 레이아웃이 적용된 내부 페이지들 */}
       <Route element={<MainLayout />}>
         <Route path="/main" element={<HomePage />} />

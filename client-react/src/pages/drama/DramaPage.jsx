@@ -3,164 +3,112 @@ import { useLocation } from 'react-router-dom';
 import Hero from '../../components/hero/Hero';
 import ContentSection from '../../components/content/ContentSection';
 import GenreDropdown from '../../components/dropdown/GenreDropdown';
+import Slider from '../../components/slider/Slider';
+//import { getTodayRecommendations } from '../../services/todayRecommendationService';
+import { getPopularContent, getEmotionContent, getRecentContent } from '../../services/recommendationService';
+import { getCurrentUser } from '../../services/auth';
+import { getEmotionRecommendations } from '../../services/emotionRecommendationService';
 import './DramaPage.css';
+import { getMyData } from "../../services/csvService";
+import { mapCsvItemToHero } from "../../utils/mapCsvItemToHero";
+
+
 
 /**
  * 드라마 전용 페이지 컴포넌트 - 메인 페이지와 동일한 UI 구조
  */
 const DramaPage = () => {
   const location = useLocation();
+  const userId = getCurrentUserId();
+
+  const emotionTitleMessage =
+    (userId === 541 && "소금님, 오늘은 마법 같은 SF 한 편으로 답답함 훌훌 털어보세요!") ||
+    (userId === 436971 && "처드님, 짜릿한 액션이나 뜨거운 드라마로 기운 충전 어떠세요?") ||
+    (userId === 449791 && "미애님, 오늘은 스릴 넘치는 영화로 숨 막히게 몰입해보는 건 어때요?") ||
+    "오늘도 좋은 하루 되세요!";
   const [heroData, setHeroData] = useState([]);
-  const [popularDramas, setPopularDramas] = useState([]);
-  const [recentDramas, setRecentDramas] = useState([]);
-  const [genreDramas, setGenreDramas] = useState([]);
-  const [userRecommendations, setUserRecommendations] = useState([]);
-  const [filteredDramas, setFilteredDramas] = useState([]);
+  const [slidersData, setSlidersData] = useState({
+    popular: [],
+    emotion: [],
+    recent: []
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [heroError, setHeroError] = useState(null);
   const [userName, setUserName] = useState('사용자');
   const [selectedGenre, setSelectedGenre] = useState('');
 
-  // 드라마 데이터 로드
   useEffect(() => {
-    const loadDramaData = async () => {
-      setLoading(true);
-      try {
-        // 드라마 전용 샘플 데이터
-        const sampleDramaData = [
-          {
-            idx: '1',
-            asset_nm: '사랑의 불시착',
-            genre: '로맨스',
-            poster_path: 'https://placehold.co/300x450?text=사랑의+불시착',
-            release_year: '2019',
-            rating: '4.9',
-            description: '북한에 불시착한 재벌 상속녀와 특급 장교의 로맨스'
-          },
-          {
-            idx: '2',
-            asset_nm: '오징어 게임',
-            genre: '공포/스릴러',
-            poster_path: 'https://placehold.co/300x450?text=오징어+게임',
-            release_year: '2021',
-            rating: '4.8',
-            description: '456억의 상금을 걸고 목숨을 건 서바이벌 게임'
-          },
-          {
-            idx: '3',
-            asset_nm: '킹덤',
-            genre: 'SF/판타지',
-            poster_path: 'https://placehold.co/300x450?text=킹덤',
-            release_year: '2019',
-            rating: '4.7',
-            description: '조선시대 좀비 아포칼립스를 그린 작품'
-          },
-          {
-            idx: '4',
-            asset_nm: '이태원 클라쓰',
-            genre: '드라마',
-            poster_path: 'https://placehold.co/300x450?text=이태원+클라쓰',
-            release_year: '2020',
-            rating: '4.6',
-            description: '젊은이들의 꿈과 도전을 그린 청춘 드라마'
-          },
-          {
-            idx: '5',
-            asset_nm: '더 글로리',
-            genre: '공포/스릴러',
-            poster_path: 'https://placehold.co/300x450?text=더+글로리',
-            release_year: '2022',
-            rating: '4.8',
-            description: '학교폭력 피해자의 치밀한 복수 이야기'
-          },
-          {
-            idx: '6',
-            asset_nm: '스카이 캐슬',
-            genre: '드라마',
-            poster_path: 'https://placehold.co/300x450?text=스카이+캐슬',
-            release_year: '2018',
-            rating: '4.7',
-            description: '상류층 가정의 교육 열풍을 그린 사회 드라마'
-          },
-          {
-            idx: '7',
-            asset_nm: '별에서 온 그대',
-            genre: 'SF/판타지',
-            poster_path: 'https://placehold.co/300x450?text=별에서+온+그대',
-            release_year: '2013',
-            rating: '4.5',
-            description: '외계인과 인간의 로맨스를 그린 판타지 드라마'
-          },
-          {
-            idx: '8',
-            asset_nm: '태양의 후예',
-            genre: '로맨스',
-            poster_path: 'https://placehold.co/300x450?text=태양의+후예',
-            release_year: '2016',
-            rating: '4.6',
-            description: '군인과 의사의 로맨스를 그린 드라마'
-          },
-          {
-            idx: '9',
-            asset_nm: '펜트하우스',
-            genre: '드라마',
-            poster_path: 'https://placehold.co/300x450?text=펜트하우스',
-            release_year: '2020',
-            rating: '4.4',
-            description: '상류층의 욕망과 복수를 그린 막장 드라마'
-          },
-          {
-            idx: '10',
-            asset_nm: '갯마을 차차차',
-            genre: '코미디',
-            poster_path: 'https://placehold.co/300x450?text=갯마을+차차차',
-            release_year: '2021',
-            rating: '4.7',
-            description: '시골 마을의 따뜻한 로맨스 코미디'
-          }
-        ];
-        
-        setHeroData(sampleDramaData.slice(0, 5));
-        setPopularDramas(sampleDramaData);
-        setRecentDramas(sampleDramaData);
-        setGenreDramas(sampleDramaData);
-        setUserRecommendations(sampleDramaData);
-        setFilteredDramas(sampleDramaData);
-        
-        setLoading(false);
-      } catch (err) {
-        console.error('드라마 데이터 로드 오류:', err);
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-    
-    loadDramaData();
+    loadDramaPageData();
   }, []);
 
-  // URL에서 장르 파라미터 읽기 및 필터링
+  // URL에서 장르 파라미터 읽기 및 API 재요청
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const genre = urlParams.get('genre') || '';
     setSelectedGenre(genre);
-    
-    // 장르가 선택되었을 때 필터링
     if (genre) {
-      const filtered = popularDramas.filter(drama => 
-        drama.genre.toLowerCase().includes(genre.toLowerCase())
-      );
-      setFilteredDramas(filtered);
+      loadDramaPageData(genre);
     } else {
-      // 장르가 선택되지 않았을 때는 모든 드라마 표시
-      setFilteredDramas(popularDramas);
+      loadDramaPageData();
     }
-  }, [location.search, popularDramas]);
+    // eslint-disable-next-line
+  }, [location.search]);
+
+  const loadDramaPageData = async (genreParam = '') => {
+    try {
+      setLoading(true);
+      setError(null);
+      setHeroError(null);
+      const userId = getCurrentUserId();
+      // Hero 데이터 로드 (개별 에러 처리)
+      let heroResult = [];
+      try {
+        const rawData = await getMyData(userId);
+        heroResult = rawData.map(mapCsvItemToHero).filter(item => item.is_drama === 1 && item.is_movie === 0 && item.poster_path != 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/1200px-No-Image-Placeholder.svg.png').sort((a, b) => Number(a.rank) - Number(b.rank));
+      } catch (err) {
+        setHeroError('Hero 콘텐츠를 불러올 수 없습니다.');
+        heroResult = [];
+      }
+      // 인기/최신 슬라이더는 기존대로, 감정 슬라이더만 교체
+      const [popularResult, recentResult] = await Promise.all([
+        getPopularContent({ limit: 10, is_drama: true, is_movie: false, is_adult: false, genre: genreParam || undefined }).catch(() => []),
+        getRecentContent({ limit: 10, is_drama: true, is_movie: false, is_adult: false, genre: genreParam || undefined }).catch(() => [])
+      ]);
+      // 감정 슬라이더 데이터 (is_drama=1)
+      const emotionResult = await getEmotionRecommendations({
+        userIdx: userId,
+        genre: genreParam,
+        isDrama: true
+      }).catch(() => []);
+      // Hero 데이터 설정
+      if (heroResult && heroResult.length > 0) {
+        setHeroData(heroResult);
+        setHeroError(null);
+      } else {
+        setHeroError('추천 데이터가 없습니다.');
+      }
+      // 슬라이더 데이터 설정
+      const newSlidersData = {
+        popular: popularResult || [],
+        emotion: emotionResult || [],
+        recent: recentResult || []
+      };
+      setSlidersData(newSlidersData);
+    } catch (err) {
+      setError('데이터를 불러오는 중 문제가 발생했습니다.');
+      setHeroError('추천 콘텐츠를 불러오는 중 문제가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="drama-page">
         <div className="loading-container">
-          <h2>드라마를 불러오는 중...</h2>
+          <h2>드라마 콘텐츠를 불러오는 중...</h2>
+          <p>잠시만 기다려주세요.</p>
         </div>
       </div>
     );
@@ -172,6 +120,7 @@ const DramaPage = () => {
         <div className="error-container">
           <h2>오류가 발생했습니다</h2>
           <p>{error}</p>
+          <button onClick={loadDramaPageData}>다시 시도</button>
         </div>
       </div>
     );
@@ -185,50 +134,91 @@ const DramaPage = () => {
       </div>
 
       {/* 히어로 섹션 */}
-      {heroData && heroData.length > 0 && (
-        <Hero items={heroData} />
-      )}
+      <Hero 
+        items={heroData}
+        loading={false}
+        error={heroError}
+      />
       
-      {/* 콘텐츠 섹션들 */}
-      <div className="content-sections">
-        {selectedGenre ? (
-          // 장르가 선택되었을 때: 필터된 결과만 표시
-          <ContentSection
-            title={`${selectedGenre} 드라마`}
-            items={filteredDramas}
-            id="filtered-dramas"
+      {/* 메인 콘텐츠 - 3개의 슬라이더 */}
+      <main className="main-content">
+        <div className="container">
+          {/* 1. Top 10 인기 드라마 슬라이더 */}
+          <SliderSection
+            id="top10-slider"
+            title="오늘의 인기 드라마"
+            items={slidersData.popular}
           />
-        ) : (
-          // 장르가 선택되지 않았을 때: 모든 섹션 표시
-          <>
-            <ContentSection
-              title={`${userName}님을 위한 드라마 추천`}
-              items={userRecommendations}
-              id="user-drama-recommendations"
-            />
-            
-            <ContentSection
-              title="오늘의 인기 드라마"
-              items={popularDramas}
-              id="popular-dramas"
-            />
-            
-            <ContentSection
-              title="최신 드라마"
-              items={recentDramas}
-              id="recent-dramas"
-            />
-            
-            <ContentSection
-              title="장르별 추천 드라마"
-              items={genreDramas}
-              id="genre-dramas"
-            />
-          </>
-        )}
-      </div>
+          {/* 2. 감정 드라마 슬라이더 */}
+          <SliderSection
+            id="emotion-slider"
+            title={emotionTitleMessage}
+            items={slidersData.emotion}
+          />
+          {/* 3. 최신 드라마 슬라이더 */}
+          <SliderSection
+            id="recent-slider"
+            title="따끈따끈한 최신 드라마, 지금 만나보세요"
+            items={slidersData.recent}
+          />
+        </div>
+      </main>
     </div>
   );
+};
+
+// 재사용 가능한 SliderSection 컴포넌트 (HomePage/MoviePage와 동일)
+const SliderSection = ({ id, title, items }) => {
+  return (
+    <section className="slider-section" id={`${id}-section`}>
+      <div className="section-header">
+        <h2 className="section-title">{title}</h2>
+        <div className="section-controls">
+          <button className="control-btn prev-btn" aria-label="이전">
+            <span className="icon icon-arrow-left"></span>
+          </button>
+          <button className="control-btn next-btn" aria-label="다음">
+            <span className="icon icon-arrow-right"></span>
+          </button>
+        </div>
+      </div>
+      <div className="slider-container">
+        {items && items.length > 0 ? (
+          <Slider 
+            items={items}
+            title={title}
+            sliderId={id}
+            showTitle={false}
+          />
+        ) : (
+          <div className="no-content">
+            <p>콘텐츠를 불러오는 중입니다...</p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
+// 현재 로그인된 사용자의 ID를 가져오는 함수 (HomePage와 동일)
+const getCurrentUserId = () => {
+  try {
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      if (userData.user_idx) {
+        return userData.user_idx;
+      }
+    }
+    const sessionUserData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+    if (sessionUserData.user_idx) {
+      return sessionUserData.user_idx;
+    }
+    return 541; // 기본값
+  } catch (error) {
+    console.error('사용자 ID 가져오기 실패:', error);
+    return 541;
+  }
 };
 
 export default DramaPage;

@@ -191,7 +191,7 @@ const SliderApp = () => {
       {testItems.length > 0 && (
         <Slider 
           items={testItems} 
-          title="테스트 추천 콘텐츠 (10개)" 
+          title="" 
           sliderId="test-slider" 
         />
       )}
@@ -199,7 +199,7 @@ const SliderApp = () => {
       {topItems.length > 0 && (
         <Slider 
           items={itemsToShow} 
-          title="오늘의 인기작 TOP 10" 
+          title="" 
           sliderId="top-slider" 
         />
       )}
@@ -207,7 +207,7 @@ const SliderApp = () => {
       {emotionItems.length > 0 && (
         <Slider 
           items={emotionItems} 
-          title="감정 기반 추천 콘텐츠" 
+          title="" 
           sliderId="emotion-slider" 
         />
       )}
@@ -215,7 +215,7 @@ const SliderApp = () => {
       {recentItems.length > 0 && (
         <Slider 
           items={recentItems} 
-          title="최근 시청한 콘텐츠와 유사한 콘텐츠" 
+          title="" 
           sliderId="recent-slider" 
         />
       )}

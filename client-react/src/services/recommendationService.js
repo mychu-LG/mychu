@@ -8,12 +8,36 @@ import { createCacheKey, cachedFetch } from '../utils/apiCache.js';
 import { API_CONFIG } from '../utils/apiConfig.js';
 
 /**
- * 응답 아이템을 일관된 형식으로 정규화
+ * 포스터 이미지가 유효한지 확인
+ * @param {string} posterPath - 포스터 경로
+ * @returns {boolean} - 유효한 포스터인지 여부
+ */
+const isValidPoster = (posterPath) => {
+  if (!posterPath) return false;
+  
+  // "No-Image", "placeholder", "default" 등이 포함된 URL 필터링
+  const invalidPatterns = [
+    'no-image',
+    'placeholder',
+    'default',
+    'missing',
+    'unavailable',
+    'not-found',
+    'noimage'
+  ];
+  
+  const lowerPosterPath = posterPath.toLowerCase();
+  return !invalidPatterns.some(pattern => lowerPosterPath.includes(pattern));
+};
+
+/**
+ * 응답 아이템을 일관된 형식으로 정규화 (포스터 검증 포함)
  * @param {Array} items - API에서 받은 원본 아이템들
+ * @param {boolean} filterInvalidPosters - 유효하지 않은 포스터 필터링 여부
  * @returns {Array} - 정규화된 아이템들
  */
-const normalizeItems = (items = []) => {
-  return items.map(item => {
+const normalizeItems = (items = [], filterInvalidPosters = false) => {
+  const normalizedItems = items.map(item => {
     // 다양한 필드에서 ID 추출
     const contentId = item.idx || item.asset_idx || item.id || null;
     
@@ -29,6 +53,13 @@ const normalizeItems = (items = []) => {
       is_adult: item.is_adult || false
     };
   });
+
+  // 포스터 필터링이 활성화된 경우 유효하지 않은 포스터 제거
+  if (filterInvalidPosters) {
+    return normalizedItems.filter(item => isValidPoster(item.poster_path));
+  }
+
+  return normalizedItems;
 };
 
 /**
@@ -36,22 +67,28 @@ const normalizeItems = (items = []) => {
  * @param {Object} options - 가져오기 옵션
  * @returns {Promise<Array>} - 히어로 아이템들
  */
-export const getHeroContent = async (options = { isMovie: true, limit: 5 }) => {
+export const getHeroContent = async (options = { is_movie: true, limit: 5 }) => {
   const cacheKey = createCacheKey('hero-content', {
     limit: options.limit || 5,
-    isMovie: options.isMovie === false ? false : true
+    is_movie: options.is_movie === false ? false : true
   });
   
   try {
     const data = await cachedFetch(cacheKey, async () => {
-      const results = await recommendationAPI.fetchRecommendations('test', options.limit || 5, {
-        is_movie: options.isMovie === false ? false : true,
+      // 포스터 필터링을 위해 더 많은 데이터를 요청
+      const requestLimit = Math.max((options.limit || 5) * 2, 10);
+      const results = await recommendationAPI.fetchRecommendations('test', requestLimit, {
+        is_movie: options.is_movie === false ? false : true,
         is_main: true
       });
       return results;
     }, API_CONFIG.cacheTimeout);
     
-    return normalizeItems(data);
+    // 포스터 필터링 적용하여 정규화
+    const validItems = normalizeItems(data, true);
+    
+    // 요청된 개수만큼 반환 (유효한 포스터가 있는 것들만)
+    return validItems.slice(0, options.limit || 5);
   } catch (error) {
     console.error('히어로 콘텐츠 가져오기 실패:', error);
     return [];
@@ -63,29 +100,50 @@ export const getHeroContent = async (options = { isMovie: true, limit: 5 }) => {
  * @param {Object} options - 가져오기 옵션
  * @returns {Promise<Array>} - 인기 아이템들
  */
-export const getPopularContent = async (options = { isMovie: null, isAdult: false, limit: 10 }) => {
+export const getPopularContent = async (options = { is_movie: null, is_drama: null, is_adult: false, limit: 10, filterInvalidPosters: false, genre: null }) => {
   const cacheKey = createCacheKey('popular-content', {
     limit: options.limit || 10,
-    isMovie: options.isMovie,
-    isAdult: options.isAdult
+    is_movie: options.is_movie,
+    is_drama: options.is_drama,
+    is_adult: options.is_adult,
+    filterInvalidPosters: options.filterInvalidPosters,
+    genre: options.genre
   });
   
   try {
     const data = await cachedFetch(cacheKey, async () => {
-      const results = await recommendationAPI.fetchRecommendations('popular', options.limit || 10, {
-        is_movie: options.isMovie,
-        is_adult: options.isAdult
-      });
+      // 포스터 필터링이 활성화된 경우 더 많은 데이터 요청
+      const requestLimit = options.filterInvalidPosters ? 
+        Math.max((options.limit || 10) * 1.5, 15) : 
+        (options.limit || 10);
+      
+      // 동적으로 apiOptions 생성
+      const apiOptions = { is_adult: options.is_adult };
+      if (typeof options.is_movie === 'boolean') apiOptions.is_movie = options.is_movie;
+      if (typeof options.is_drama === 'boolean') apiOptions.is_drama = options.is_drama;
+      if (options.genre) apiOptions.genre = options.genre;
+      
+      const results = await recommendationAPI.fetchRecommendations('popular', requestLimit, apiOptions);
       return results;
     }, API_CONFIG.cacheTimeout);
     
-    return normalizeItems(data);
+    let normalizedItems = normalizeItems(data, options.filterInvalidPosters);
+    
+    // 장르 필터링 (백엔드에서 지원하지 않는 경우를 위한 클라이언트 사이드 필터링)
+    if (options.genre && normalizedItems.length > 0) {
+      normalizedItems = normalizedItems.filter(item => 
+        item.genre && item.genre.toLowerCase().includes(options.genre.toLowerCase())
+      );
+    }
+    
+    // 요청된 개수만큼 반환
+    return normalizedItems.slice(0, options.limit || 10);
   } catch (error) {
     console.error('인기 콘텐츠 가져오기 실패:', error);
     console.log('Fallback: 인기 콘텐츠 샘플 데이터 사용');
     
     // 백엔드 연결 실패 시 샘플 데이터 반환
-    return [
+    let fallbackData = [
       { idx: 'pop1', asset_nm: '어벤져스: 엔드게임', poster_path: 'https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg', genre: '액션', release_year: '2019' },
       { idx: 'pop2', asset_nm: '기생충', poster_path: 'https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', genre: '스릴러', release_year: '2019' },
       { idx: 'pop3', asset_nm: '조커', poster_path: 'https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg', genre: '스릴러', release_year: '2019' },
@@ -97,6 +155,17 @@ export const getPopularContent = async (options = { isMovie: null, isAdult: fals
       { idx: 'pop9', asset_nm: '아가씨', poster_path: 'https://image.tmdb.org/t/p/w500/e7gOJcSFzYcxUJCfrYvCFbJhJJ7.jpg', genre: '로맨스', release_year: '2016' },
       { idx: 'pop10', asset_nm: '밀양', poster_path: 'https://image.tmdb.org/t/p/w500/xDzxK8nSdlnqfK2nEiuFRzb1RD3.jpg', genre: '드라마', release_year: '2007' }
     ];
+    
+    // 장르 필터링 적용
+    if (options.genre) {
+      fallbackData = fallbackData.filter(item => 
+        item.genre && item.genre.toLowerCase().includes(options.genre.toLowerCase())
+      );
+    }
+    
+    return options.filterInvalidPosters ? 
+      fallbackData.filter(item => isValidPoster(item.poster_path)).slice(0, options.limit || 10) :
+      fallbackData.slice(0, options.limit || 10);
   }
 };
 
@@ -105,29 +174,48 @@ export const getPopularContent = async (options = { isMovie: null, isAdult: fals
  * @param {Object} options - 가져오기 옵션
  * @returns {Promise<Array>} - 최신 아이템들
  */
-export const getRecentContent = async (options = { isMovie: null, isAdult: false, limit: 10 }) => {
+export const getRecentContent = async (options = { is_movie: null, is_drama: null, is_adult: false, limit: 10, filterInvalidPosters: false, genre: null }) => {
   const cacheKey = createCacheKey('recent-content', {
     limit: options.limit || 10,
-    isMovie: options.isMovie,
-    isAdult: options.isAdult
+    is_movie: options.is_movie,
+    is_drama: options.is_drama,
+    is_adult: options.is_adult,
+    filterInvalidPosters: options.filterInvalidPosters,
+    genre: options.genre
   });
   
   try {
     const data = await cachedFetch(cacheKey, async () => {
-      const results = await recommendationAPI.fetchRecommendations('recent', options.limit || 10, {
-        is_movie: options.isMovie,
-        is_adult: options.isAdult
-      });
+      const requestLimit = options.filterInvalidPosters ? 
+        Math.max((options.limit || 10) * 1.5, 15) : 
+        (options.limit || 10);
+      
+      // 동적으로 apiOptions 생성
+      const apiOptions = { is_adult: options.is_adult };
+      if (typeof options.is_movie === 'boolean') apiOptions.is_movie = options.is_movie;
+      if (typeof options.is_drama === 'boolean') apiOptions.is_drama = options.is_drama;
+      if (options.genre) apiOptions.genre = options.genre;
+      
+      const results = await recommendationAPI.fetchRecommendations('recent', requestLimit, apiOptions);
       return results;
     }, API_CONFIG.cacheTimeout);
     
-    return normalizeItems(data);
+    let normalizedItems = normalizeItems(data, options.filterInvalidPosters);
+    
+    // 장르 필터링
+    if (options.genre && normalizedItems.length > 0) {
+      normalizedItems = normalizedItems.filter(item => 
+        item.genre && item.genre.toLowerCase().includes(options.genre.toLowerCase())
+      );
+    }
+    
+    return normalizedItems.slice(0, options.limit || 10);
   } catch (error) {
     console.error('최신 콘텐츠 가져오기 실패:', error);
     console.log('Fallback: 최신 콘텐츠 샘플 데이터 사용');
     
     // 백엔드 연결 실패 시 샘플 데이터 반환
-    return [
+    let fallbackData = [
       { idx: 'rec1', asset_nm: '탑건: 매버릭', poster_path: 'https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg', genre: '액션', release_year: '2022' },
       { idx: 'rec2', asset_nm: '엘비스', poster_path: 'https://image.tmdb.org/t/p/w500/qBOKWqAFbveZ4ryjJJwbie6tXkG.jpg', genre: '드라마', release_year: '2022' },
       { idx: 'rec3', asset_nm: '미니언즈: 라이징 구루', poster_path: 'https://image.tmdb.org/t/p/w500/wKiOkZTN9lUUUNZLmtnwubZYONg.jpg', genre: '애니메이션', release_year: '2022' },
@@ -139,6 +227,17 @@ export const getRecentContent = async (options = { isMovie: null, isAdult: false
       { idx: 'rec9', asset_nm: '브로커', poster_path: 'https://image.tmdb.org/t/p/w500/cuAq3zBgYtClsWJFpQ5NJdCIyX3.jpg', genre: '드라마', release_year: '2022' },
       { idx: 'rec10', asset_nm: '한산: 용의 출현', poster_path: 'https://image.tmdb.org/t/p/w500/7kFhLFGlJBCqRDgBdLnJNsQUlQK.jpg', genre: '액션', release_year: '2022' }
     ];
+    
+    // 장르 필터링 적용
+    if (options.genre) {
+      fallbackData = fallbackData.filter(item => 
+        item.genre && item.genre.toLowerCase().includes(options.genre.toLowerCase())
+      );
+    }
+    
+    return options.filterInvalidPosters ? 
+      fallbackData.filter(item => isValidPoster(item.poster_path)).slice(0, options.limit || 10) :
+      fallbackData.slice(0, options.limit || 10);
   }
 };
 
@@ -147,40 +246,70 @@ export const getRecentContent = async (options = { isMovie: null, isAdult: false
  * @param {Object} options - 가져오기 옵션
  * @returns {Promise<Array>} - 감정 기반 추천 아이템들
  */
-export const getEmotionContent = async (options = { isMovie: null, isAdult: false, limit: 10 }) => {
+export const getEmotionContent = async (options = { is_movie: null, is_drama: null, is_adult: false, limit: 10, filterInvalidPosters: false, genre: null }) => {
   const cacheKey = createCacheKey('emotion-content', {
     limit: options.limit || 10,
-    isMovie: options.isMovie,
-    isAdult: options.isAdult
+    is_movie: options.is_movie,
+    is_drama: options.is_drama,
+    is_adult: options.is_adult,
+    filterInvalidPosters: options.filterInvalidPosters,
+    genre: options.genre
   });
   
   try {
     const data = await cachedFetch(cacheKey, async () => {
-      const results = await recommendationAPI.fetchRecommendations('emotion', options.limit || 10, {
-        is_movie: options.isMovie,
-        is_adult: options.isAdult
-      });
+      const requestLimit = options.filterInvalidPosters ? 
+        Math.max((options.limit || 10) * 1.5, 15) : 
+        (options.limit || 10);
+      
+      // 동적으로 apiOptions 생성
+      const apiOptions = { is_adult: options.is_adult };
+      if (typeof options.is_movie === 'boolean') apiOptions.is_movie = options.is_movie;
+      if (typeof options.is_drama === 'boolean') apiOptions.is_drama = options.is_drama;
+      if (options.genre) apiOptions.genre = options.genre;
+      
+      const results = await recommendationAPI.fetchRecommendations('emotion', requestLimit, apiOptions);
       return results;
     }, API_CONFIG.cacheTimeout);
     
-    return normalizeItems(data);
+    let normalizedItems = normalizeItems(data, options.filterInvalidPosters);
+    
+    // 장르 필터링
+    if (options.genre && normalizedItems.length > 0) {
+      normalizedItems = normalizedItems.filter(item => 
+        item.genre && item.genre.toLowerCase().includes(options.genre.toLowerCase())
+      );
+    }
+    
+    return normalizedItems.slice(0, options.limit || 10);
   } catch (error) {
     console.error('감정 기반 추천 콘텐츠 가져오기 실패:', error);
     console.log('Fallback: 감정 기반 콘텐츠 샘플 데이터 사용');
     
     // 백엔드 연결 실패 시 감정 기반 샘플 데이터 반환
-    return [
-      { idx: 'emo1', asset_nm: '어바웃 타임', poster_path: 'https://image.tmdb.org/t/p/w500/cD3bsNzJuKqczUBrfMsIJcTgHEj.jpg', genre: '로맨스', release_year: '2013' },
-      { idx: 'emo2', asset_nm: '라라랜드', poster_path: 'https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', genre: '로맨스', release_year: '2016' },
-      { idx: 'emo3', asset_nm: '러브액츄얼리', poster_path: 'https://image.tmdb.org/t/p/w500/1ODdWLpyOnIVl0l67GrdaFDlJGf.jpg', genre: '로맨스', release_year: '2003' },
-      { idx: 'emo4', asset_nm: '포레스트 검프', poster_path: 'https://image.tmdb.org/t/p/w500/saHP97rTPS5eLmrLQEcANmKrsFl.jpg', genre: '드라마', release_year: '1994' },
-      { idx: 'emo5', asset_nm: '업', poster_path: 'https://image.tmdb.org/t/p/w500/BaWg43qgkTxT4zJmS8qOdFCjKm.jpg', genre: '애니메이션', release_year: '2009' },
-      { idx: 'emo6', asset_nm: '리틀 포레스트', poster_path: 'https://image.tmdb.org/t/p/w500/8D5RudJVE1cJSPqJMYQ9n7YrSJW.jpg', genre: '드라마', release_year: '2018' },
-      { idx: 'emo7', asset_nm: '천공의 성 라퓨타', poster_path: 'https://image.tmdb.org/t/p/w500/npTzVQPELVGHEQIG4hHxKqOoEbT.jpg', genre: '애니메이션', release_year: '1986' },
-      { idx: 'emo8', asset_nm: '미드나이트 인 파리', poster_path: 'https://image.tmdb.org/t/p/w500/4EXPM1a27NdJH8BLKUkE9CZnqM7.jpg', genre: '코미디', release_year: '2011' },
-      { idx: 'emo9', asset_nm: '지브리 영화들', poster_path: 'https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg', genre: '애니메이션', release_year: '2001' },
-      { idx: 'emo10', asset_nm: '캐스트 어웨이', poster_path: 'https://image.tmdb.org/t/p/w500/8nBNqAESsLOV0nW7LKEcF2QBFF4.jpg', genre: '드라마', release_year: '2000' }
+    let fallbackData = [
+      { idx: 15765, asset_nm: '노트북', poster_path: ' https://image.wavve.com/v1/thumbnails/480_720_20_80/movieImg/MovieGroup/2023/GMV_CD01_WR0000011336-Vertical_LogoY_RTC.jpg', genre: '로맨스', release_year: '2013' },
+      { idx: 59226, asset_nm: '라라랜드', poster_path: 'https://i.namu.wiki/i/78uTXq-Jd3ME_MYXtiyOo-qBPjwpiNF9qs1ko9YvE1BmaVagE9-h95a5Xuh0jVt6WX9sY8seQLZlU2GidF7Gcg.webp', genre: '로맨스', release_year: '2016' },
+      { idx: 22087, asset_nm: '러브액츄얼리', poster_path: 'https://image.wavve.com/v1/thumbnails/480_720_20_80/meta/image/202405/1714713162866926870.jpg', genre: '로맨스', release_year: '2003' },
+      { idx: 153127, asset_nm: '포레스트 검프', poster_path: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVdHu72V-1sIR4NsXxJ5wn6V7habcNxFbWIw&s', genre: '드라마', release_year: '1994' },
+      { idx: 29810, asset_nm: '업', poster_path: ' https://image.wavve.com/v1/thumbnails/480_720_20_80/movieImg/MovieGroup/2022/GMV_CA01_DY0000011265-Vertical_LogoY.jpg', genre: '애니메이션', release_year: '2009' },
+      { idx: 86168, asset_nm: '리틀 포레스트', poster_path: 'https://image.wavve.com/v1/thumbnails/480_720_20_80/201908/20190805/d28a944c3eb196fd105c3bc8ecd091ee.jpg', genre: '드라마', release_year: '2018' },
+      { idx: 187973, asset_nm: '천공의 성 라퓨타', poster_path: ' https://image.wavve.com/v1/thumbnails/480_720_20_80/movieImg/MovieGroup/2022/GMV_CR01_DN0000011315-Vertical_LogoY.jpg', genre: '애니메이션', release_year: '1986' },
+      { idx: 142129, asset_nm: '미드나잇인파리', poster_path: 'https://image.wavve.com/v1/thumbnails/480_720_20_80/meta/image/202503/1742283130595879407.jpg ', genre: '로맨스', release_year: '2011' },
+      { idx: 187342, asset_nm: '이웃집 토토로', poster_path: 'https://image.wavve.com/v1/thumbnails/480_720_20_80/movieImg/MovieGroup/2022/GMV_CR01_DN0000011313-Vertical_LogoY.jpg', genre: '애니메이션', release_year: '2001' },
+      { idx: 12179, asset_nm: '캐스트어웨이', poster_path: 'https://image.wavve.com/v1/thumbnails/480_720_20_80/movieImg/MovieGroup/2022/GMV_CQ01_PT0000011137-Vertical_LogoY.jpg', genre: '로맨스', release_year: '2000' }
     ];
+    
+    // 장르 필터링 적용
+    if (options.genre) {
+      fallbackData = fallbackData.filter(item => 
+        item.genre && item.genre.toLowerCase().includes(options.genre.toLowerCase())
+      );
+    }
+    
+    return options.filterInvalidPosters ? 
+      fallbackData.filter(item => isValidPoster(item.poster_path)).slice(0, options.limit || 10) :
+      fallbackData.slice(0, options.limit || 10);
   }
 };
 
@@ -189,18 +318,20 @@ export const getEmotionContent = async (options = { isMovie: null, isAdult: fals
  * @param {Object} options - 가져오기 옵션
  * @returns {Promise<Array>} - 유사 아이템들
  */
-export const getSimilarContent = async (options = { isMovie: null, isAdult: false, limit: 10 }) => {
+export const getSimilarContent = async (options = { is_movie: null, is_drama: null, is_adult: false, limit: 10 }) => {
   const cacheKey = createCacheKey('similar-content', {
     limit: options.limit || 10,
-    isMovie: options.isMovie,
-    isAdult: options.isAdult
+    is_movie: options.is_movie,
+    is_drama: options.is_drama,
+    is_adult: options.is_adult
   });
   
   try {
     const data = await cachedFetch(cacheKey, async () => {
       const results = await recommendationAPI.fetchRecommendations('similar', options.limit || 10, {
-        is_movie: options.isMovie,
-        is_adult: options.isAdult
+        is_movie: options.is_movie,
+        is_drama: options.is_drama,
+        is_adult: options.is_adult
       });
       return results;
     }, API_CONFIG.cacheTimeout);
