@@ -24,16 +24,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: #000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #000, #111, #222);
+  background: #6b7280;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #000, #111, #222);
+  background: #6b7280;
 }
 
 /* 공통 유틸리티 클래스 */

@@ -7,13 +7,23 @@ import Slider from '../../components/slider/Slider';
 import { getTodayRecommendations } from '../../services/todayRecommendationService';
 import { getPopularContent, getEmotionContent, getRecentContent } from '../../services/recommendationService';
 import { getCurrentUser } from '../../services/auth';
+import { getEmotionRecommendations } from '../../services/emotionRecommendationService';
 import './MoviePage.css';
+import { getMyData } from "../../services/csvService";
+import { mapCsvItemToHero } from "../../utils/mapCsvItemToHero";
 
 /**
  * 영화 전용 페이지 컴포넌트 - 메인 페이지와 동일한 UI 구조
  */
 const MoviePage = () => {
   const location = useLocation();
+  const userId = getCurrentUserId();
+
+  const emotionTitleMessage =
+    (userId === 541 && "소금님, 오늘은 마법 같은 SF 한 편으로 답답함 훌훌 털어보세요!") ||
+    (userId === 436971 && "처드님, 짜릿한 액션이나 뜨거운 드라마로 기운 충전 어떠세요?") ||
+    (userId === 449791 && "미애님, 오늘은 스릴 넘치는 영화로 숨 막히게 몰입해보는 건 어때요?") ||
+    "오늘도 좋은 하루 되세요!";
   const [heroData, setHeroData] = useState([]);
   const [slidersData, setSlidersData] = useState({
     popular: [],
@@ -49,20 +59,27 @@ const MoviePage = () => {
       setError(null);
       setHeroError(null);
       const userId = getCurrentUserId();
+      
       // Hero 데이터 로드 (개별 에러 처리)
       let heroResult = [];
       try {
-        heroResult = await getTodayRecommendations(userId, 5);
+        const rawData = await getMyData(userId);
+        heroResult = rawData.map(mapCsvItemToHero).filter(item => item.is_movie === 1 && item.is_drama === 0 && item.poster_path !== 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/1200px-No-Image-Placeholder.svg.png').sort((a, b) => Number(a.rank) - Number(b.rank));
       } catch (err) {
         setHeroError('Hero 콘텐츠를 불러올 수 없습니다.');
         heroResult = [];
       }
-      // 슬라이더 데이터 로드 (is_movie: true, genre 적용)
-      const [popularResult, emotionResult, recentResult] = await Promise.all([
+      // 인기/최신 슬라이더는 기존대로, 감정 슬라이더만 교체
+      const [popularResult, recentResult] = await Promise.all([
         getPopularContent({ limit: 10, is_movie: true, is_drama: false, is_adult: false, genre: genreParam || undefined }).catch(() => []),
-        getEmotionContent({ limit: 10, is_movie: true, is_drama: false, is_adult: false, genre: genreParam || undefined }).catch(() => []),
         getRecentContent({ limit: 10, is_movie: true, is_drama: false, is_adult: false, genre: genreParam || undefined }).catch(() => [])
       ]);
+      // 감정 슬라이더 데이터 (is_movie=1)
+      const emotionResult = await getEmotionRecommendations({
+        userIdx: userId,
+        genre: genreParam,
+        isMovie: true
+      }).catch(() => []);
       // Hero 데이터 설정
       if (heroResult && heroResult.length > 0) {
         setHeroData(heroResult);
@@ -128,19 +145,20 @@ const MoviePage = () => {
           {/* 1. Top 10 인기 영화 슬라이더 */}
           <SliderSection
             id="top10-slider"
-            title="Top 10 인기 영화"
+            title="오늘의 인기 영화"
             items={slidersData.popular}
           />
-          {/* 2. 감정 영화 슬라이더 */}
+          {/* 2. 감정 드라마 슬라이더 */}
           <SliderSection
             id="emotion-slider"
-            title="감정 영화"
+            title={emotionTitleMessage}
             items={slidersData.emotion}
           />
+
           {/* 3. 최신 영화 슬라이더 */}
           <SliderSection
             id="recent-slider"
-            title="최신 영화"
+            title="따끈따끈한 최신 영화, 지금 만나보세요"
             items={slidersData.recent}
           />
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import './Slider.css';
@@ -6,11 +6,12 @@ import './Slider.css';
 /**
  * React Slider Component that displays a horizontal scrollable list of content cards
  */
-const Slider = ({ items = [], title = '', sliderId = 'react-slider', showNavigation = true }) => {
+const Slider = forwardRef(({ items = [], title = '', sliderId = 'react-slider', showNavigation = true }, ref) => {
   const [loadedImages, setLoadedImages] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);  // 누락된 에러 상태 추가
   const navigate = useNavigate();
+  const cardContainerRef = useRef();
 
   // 이미지 로드
   const loadImage = (src, itemId) => {
@@ -52,6 +53,20 @@ const Slider = ({ items = [], title = '', sliderId = 'react-slider', showNavigat
     }
   }, [items]);
 
+  // 외부에서 prev/next 제어를 위한 함수
+  useImperativeHandle(ref, () => ({
+    prev: () => {
+      if (cardContainerRef.current) {
+        cardContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+      }
+    },
+    next: () => {
+      if (cardContainerRef.current) {
+        cardContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+      }
+    }
+  }));
+
   const handleCardClick = (item) => {
     const itemId = item.id || item.idx || item.asset_idx;
     if (itemId) {
@@ -81,7 +96,7 @@ const Slider = ({ items = [], title = '', sliderId = 'react-slider', showNavigat
   return (
     <div className="slider-section" id={sliderId}>
       <div className="slider-container">
-        <div className="card-container">
+        <div className="card-container" ref={cardContainerRef} style={{ display: 'flex', overflowX: 'auto', scrollBehavior: 'smooth' }}>
           {items.map((item, index) => {
             const itemId = item.id || item.idx || item.asset_idx || index;
             // 콘텐츠의 고유 식별자와 슬라이더 구분을 위한 안전한 key 생성
@@ -112,7 +127,7 @@ const Slider = ({ items = [], title = '', sliderId = 'react-slider', showNavigat
       </div>
     </div>
   );
-};
+});
 
 Slider.propTypes = {
   items: PropTypes.array,

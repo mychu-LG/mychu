@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './Hero.css';
 import { Link } from 'react-router-dom';
+import { getMyData } from "../../services/csvService";
 
 /**
  * 히어로 슬라이더 컴포넌트 - props 기반 순수 컴포넌트

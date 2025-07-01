@@ -1,24 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import Slider from '../../components/slider/Slider';
+import ProductSlider from '../../components/slider/ProductSlider';
 import './ContentDetailsPage.css';
 
-const userIdx = 541; // 실제 로그인 유저 정보로 대체
+const userIdx = 541;
 
-/**
- * 콘텐츠 상세 페이지 컴포넌트
- */
 const ContentDetailsPage = () => {
   const { id } = useParams();
   const [content, setContent] = useState(null);
   const [isSeries, setIsSeries] = useState(false);
-  const [seriesInfo, setSeriesInfo] = useState(null); // 시리즈 정보(상단)
-  const [episodes, setEpisodes] = useState([]); // 시리즈 에피소드 리스트
+  const [seriesInfo, setSeriesInfo] = useState(null);
+  const [episodes, setEpisodes] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isWish, setIsWish] = useState(false);
   const [wishLoading, setWishLoading] = useState(false);
+  const [productList, setProductList] = useState([]);
+  const [similarList, setSimilarList] = useState([]);
 
-  // 단일 콘텐츠 데이터 매핑 함수
+  const EPISODES_PER_PAGE = 10;
+
   function mapContentData(contentData) {
     return {
       idx: contentData.idx,
@@ -37,18 +40,15 @@ const ContentDetailsPage = () => {
     };
   }
 
-  // 시리즈/단일 여부 판별 및 데이터 로드
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        // 1. 시리즈/단일 통합 API 호출
         const seriesRes = await fetch(`http://localhost:8000/assets/series/${id}`);
         if (!seriesRes.ok) throw new Error('콘텐츠 정보 오류');
         const seriesInfo = await seriesRes.json();
         const episodes = seriesInfo.episodes || [];
-        // 1. epsd_no 기준 중복 제거
         const uniqueEpisodes = [];
         const seen = new Set();
         for (const ep of episodes) {
@@ -57,7 +57,6 @@ const ContentDetailsPage = () => {
             seen.add(ep.epsd_no);
           }
         }
-        // 2. 시리즈/단일 판별
         const epsdNoSet = new Set(uniqueEpisodes.map(ep => ep.epsd_no));
         const isSingle = epsdNoSet.size === 1 && uniqueEpisodes[0]?.epsd_no === 1;
         const isSeries = uniqueEpisodes.length > 1 && !isSingle;
@@ -65,7 +64,6 @@ const ContentDetailsPage = () => {
         setEpisodes(uniqueEpisodes);
         setSeriesInfo(seriesInfo);
         if (!isSeries) {
-          // 단일 콘텐츠 UI를 위해 첫 에피소드 정보만 mapContentData로 변환
           setContent(mapContentData({ ...seriesInfo, ...uniqueEpisodes[0] }));
         }
       } catch (err) {
@@ -74,10 +72,10 @@ const ContentDetailsPage = () => {
         setLoading(false);
       }
     }
+
     fetchData();
   }, [id]);
 
-  // 찜 상태 확인 (시리즈/단일 공통)
   useEffect(() => {
     async function fetchWish() {
       try {
@@ -86,10 +84,43 @@ const ContentDetailsPage = () => {
         setIsWish(data.mylist.includes(Number(id)));
       } catch (e) {}
     }
+
     fetchWish();
   }, [id]);
 
-  // 찜/찜 해제 핸들러 (시리즈/단일 공통)
+  useEffect(() => {
+    async function fetchExtraContent() {
+      try {
+        const [productRes, similarRes] = await Promise.all([
+          fetch('http://localhost:8000/products/random'),
+          fetch(`http://localhost:8000/recommendation/similar/${id}`)
+        ]);
+        const productData = await productRes.json();
+        const similarData = await similarRes.json();
+
+        setProductList((productData.products || []).filter((p) => !!p.page_link).map((p) => {
+          const cleanImage = p.img_path?.replace(/.*\/cjhello-hirental\.co\.kr\//, 'https://cjhello-hirental.co.kr/');
+          return {
+            asset_idx: p.product_no || Math.random(),
+            asset_nm: p.name,
+            poster_path: cleanImage,
+            subtitle: `${p.price.toLocaleString()}원`,
+            page_link: p.page_link,
+          };
+        }));
+
+        setSimilarList((similarData.items || []).map((c) => ({
+          ...c,
+          subtitle: '',
+        })));
+      } catch (e) {
+        console.error('추천 콘텐츠/상품 로딩 실패', e);
+      }
+    }
+
+    fetchExtraContent();
+  }, [id]);
+
   const handleWish = async () => {
     setWishLoading(true);
     try {
@@ -132,11 +163,59 @@ const ContentDetailsPage = () => {
     );
   }
 
-  // ----- 시리즈물 UI -----
+  const SliderSection = ({ id, title, items, useProductSlider }) => {
+    const sliderRef = useRef();
+
+    const handlePrev = () => {
+      sliderRef.current?.prev();
+    };
+
+    const handleNext = () => {
+      sliderRef.current?.next();
+    };
+
+    const SliderComponent = useProductSlider ? ProductSlider : Slider;
+
+    return (
+      <section className="slider-section" id={`${id}-section`}>
+        <div className="section-header">
+          <h2 className="section-title">{title}</h2>
+          <div className="section-controls">
+            <button className="control-btn prev-btn" aria-label="이전" onClick={handlePrev}>
+              <span className="icon icon-arrow-left"></span>
+            </button>
+            <button className="control-btn next-btn" aria-label="다음" onClick={handleNext}>
+              <span className="icon icon-arrow-right"></span>
+            </button>
+          </div>
+        </div>
+        <div className="slider-container">
+          <SliderComponent
+            ref={sliderRef}
+            items={items}
+            sliderId={id}
+            showTitle={false}
+            onItemClick={(item) => {
+              if (item.page_link) {
+                window.open(item.page_link, "_blank");
+              } else {
+                // 링크가 없는 경우 다른 처리
+                console.log("페이지 링크 없음", item);
+              }
+            }}
+          />
+        </div>
+      </section>
+    );
+  };
+
   if (isSeries && seriesInfo) {
+    const totalPages = Math.ceil(episodes.length / EPISODES_PER_PAGE);
+    const startIdx = (currentPage - 1) * EPISODES_PER_PAGE;
+    const currentEpisodes = episodes.slice(startIdx, startIdx + EPISODES_PER_PAGE);
+
     return (
       <div className="content-details-page series-mode">
-        {/* 시리즈 상단 정보 */}
         <div className="series-header">
           <div className="series-poster">
             <img src={seriesInfo.poster_path} alt={seriesInfo.super_asset_nm} />
@@ -144,88 +223,108 @@ const ContentDetailsPage = () => {
           <div className="series-info">
             <h1>{seriesInfo.super_asset_nm}</h1>
             <div className="series-meta">
-              <span>{seriesInfo.rlse_year}</span>
+              <span>{String(seriesInfo.rlse_year).slice(0, 4)}</span>
               <span className="meta-divider">•</span>
               <span>{seriesInfo.genre}</span>
-              <span className="meta-divider">•</span>
-              <span>{seriesInfo.asset_time}분</span>
             </div>
             <div className="series-actors">
               <span>출연: {seriesInfo.actr_disp}</span>
             </div>
-            <button className="add-list-button" onClick={handleWish} disabled={wishLoading}>
-              <i className="add-icon">{isWish ? '✔' : '+'}</i> {isWish ? '찜 해제' : '찜하기'}
-            </button>
+            <div className="series-actions">
+              <button className="play-button">
+                <i className="play-icon">▶</i> 재생
+              </button>
+              <button className="add-list-button" onClick={handleWish} disabled={wishLoading}>
+                <i className="add-icon">{isWish ? '✔' : '+'}</i> {isWish ? '찜 해제' : '찜하기'}
+              </button>
+            </div>
           </div>
         </div>
-        {/* 에피소드 리스트 */}
-        <div className="episode-list-section">
-          <h2>에피소드</h2>
-          <div className="episode-list">
-            {episodes.map((ep, idx) => (
-              <div className="episode-item" key={ep.epsd_no}>
-                <div className="episode-no">{String(ep.epsd_no).padStart(2, '0')}</div>
-                <div className="episode-info">
-                  <div className="episode-title">{ep.asset_nm}</div>
-                  <div className="episode-summary">{ep.smry_shrt}</div>
+
+        <div className="episode-list-wrapper">
+          <div className="episode-list-section">
+            <h2>에피소드</h2>
+            <div className="episode-list">
+              {currentEpisodes.map((ep) => (
+                <div className="episode-item" key={ep.epsd_no}>
+                  <div className="episode-no">{String(ep.epsd_no).padStart(2, '0')}</div>
+                  <div className="episode-info">
+                    <div className="episode-title">{ep.asset_nm}</div>
+                    <div className="episode-summary">{ep.smry_shrt}</div>
+                  </div>
+                  <button className="play-button episode-play">
+                    <i className="play-icon">▶</i> 재생
+                  </button>
                 </div>
-                <button className="play-button episode-play">
-                  <i className="play-icon">▶</i> 재생
-                </button>
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div className="episode-pagination">
+                {Array.from({ length: totalPages }, (_, idx) => (
+                  <button
+                    key={idx}
+                    className={`pagination-btn ${currentPage === idx + 1 ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(idx + 1)}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
+
+        {productList.length > 0 && (
+          <SliderSection
+            id="commerce-slider"
+            title="헬로 렌탈 추천 상품"
+            items={productList}
+            useProductSlider={true}
+          />
+        )}
+        {similarList.length > 0 && (
+          <SliderSection
+            id="similar-slider"
+            title="비슷한 콘텐츠 추천"
+            items={similarList}
+            useProductSlider={false}
+          />
+        )}
       </div>
     );
   }
 
-  // ----- 단일 콘텐츠 UI (기존과 동일) -----
   const displayContent = content;
   return (
     <div className="content-details-page">
-      {/* 배경 이미지 */}
-      <div 
-        className="content-backdrop"
-        style={{ 
-          backgroundImage: `url(${displayContent?.poster_path})` 
-        }}
-      >
+      <div className="content-backdrop" style={{ backgroundImage: `url(${displayContent?.poster_path})` }}>
         <div className="backdrop-overlay"></div>
       </div>
 
-      {/* 콘텐츠 정보 */}
       <div className="content-info-container">
         <div className="content-poster">
-          <img 
-            src={displayContent?.poster_path} 
-            alt={displayContent?.asset_nm} 
-          />
+          <img src={displayContent?.poster_path} alt={displayContent?.asset_nm} />
         </div>
 
         <div className="content-info">
           <h1>{displayContent?.asset_nm}</h1>
-          
           <div className="content-meta">
-            <span>{displayContent?.release_year}</span>
+            <span>{displayContent?.rlse_year}</span>
             <span className="meta-divider">•</span>
             <span>{displayContent?.genre}</span>
             <span className="meta-divider">•</span>
             <span>{displayContent?.runtime}분</span>
           </div>
-          
           <div className="content-synopsis">
             <h3>개요</h3>
             <p>{displayContent?.synopsis}</p>
           </div>
-          
           <div className="content-people">
             <div className="content-actors">
               <h3>출연</h3>
               <p>{displayContent?.actors?.join(', ')}</p>
             </div>
           </div>
-          
           <div className="content-actions">
             <button className="play-button">
               <i className="play-icon">▶</i> 재생
@@ -237,13 +336,22 @@ const ContentDetailsPage = () => {
         </div>
       </div>
 
-      {/* 관련 콘텐츠 섹션 */}
-      <div className="related-content">
-        <h2>비슷한 콘텐츠</h2>
-        <div className="related-content-grid">
-          {/* 기존 샘플 데이터 활용 */}
-        </div>
-      </div>
+      {productList.length > 0 && (
+        <SliderSection
+          id="commerce-slider"
+          title="헬로 렌탈 추천 상품"
+          items={productList}
+          useProductSlider={true}
+        />
+      )}
+      {similarList.length > 0 && (
+        <SliderSection
+          id="similar-slider"
+          title="비슷한 콘텐츠 추천"
+          items={similarList}
+          useProductSlider={false}
+        />
+      )}
     </div>
   );
 };
