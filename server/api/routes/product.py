@@ -28,7 +28,7 @@ async def get_random_products():
     """
     try:
         df = csv_loader.load_csv('product.csv')
-        sample_df = df.sample(n=10) if len(df) >= 10 else df
+        sample_df = df.sample(n=200) if len(df) >= 10 else df
         # NaN, inf, -inf를 None으로 변환
         sample_df = sample_df.replace([np.inf, -np.inf], np.nan)
         products = sample_df.where(pd.notnull(sample_df), None).to_dict('records')

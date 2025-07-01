@@ -7,7 +7,7 @@ const normalizeImageUrl = (url) => {
   return url.replace(/^(https:\/\/[^/]+)\/\/\1/, '$1');
 };
 
-const ProductSlider = forwardRef(({ items = [], sliderId = 'product-slider' }, ref) => {
+const ProductSlider = forwardRef(({ items = [], sliderId = 'product-slider', onItemClick}, ref) => {
   const cardContainerRef = useRef();
 
   // 외부에서 prev/next 제어 가능하도록
@@ -40,7 +40,7 @@ const ProductSlider = forwardRef(({ items = [], sliderId = 'product-slider' }, r
             const itemId = item.asset_idx || index;
             const imageUrl = normalizeImageUrl(item.poster_path);
             return (
-              <div className="card product-card" key={`product-${itemId}`}>
+              <div className="card product-card" key={`product-${itemId}`} onClick={() => onItemClick?.(item)}>
                 <div className="product-image">
                   <img
                     src={imageUrl}
@@ -69,6 +69,7 @@ const ProductSlider = forwardRef(({ items = [], sliderId = 'product-slider' }, r
 ProductSlider.propTypes = {
   items: PropTypes.array,
   sliderId: PropTypes.string,
+  onItemClick: PropTypes.func,
 };
 
 export default ProductSlider;

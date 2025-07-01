@@ -98,13 +98,14 @@ const ContentDetailsPage = () => {
         const productData = await productRes.json();
         const similarData = await similarRes.json();
 
-        setProductList((productData.products || []).map((p) => {
+        setProductList((productData.products || []).filter((p) => !!p.page_link).map((p) => {
           const cleanImage = p.img_path?.replace(/.*\/cjhello-hirental\.co\.kr\//, 'https://cjhello-hirental.co.kr/');
           return {
             asset_idx: p.product_no || Math.random(),
             asset_nm: p.name,
             poster_path: cleanImage,
             subtitle: `${p.price.toLocaleString()}원`,
+            page_link: p.page_link,
           };
         }));
 
@@ -194,6 +195,14 @@ const ContentDetailsPage = () => {
             items={items}
             sliderId={id}
             showTitle={false}
+            onItemClick={(item) => {
+              if (item.page_link) {
+                window.open(item.page_link, "_blank");
+              } else {
+                // 링크가 없는 경우 다른 처리
+                console.log("페이지 링크 없음", item);
+              }
+            }}
           />
         </div>
       </section>
