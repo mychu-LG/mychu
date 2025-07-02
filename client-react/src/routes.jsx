@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import ScrollToTop from './components/layout/ScrollToTop';
 
 // 페이지 컴포넌트
 import LandingPage from './pages/home/LandingPage';
@@ -28,6 +29,8 @@ import MainLayout from './components/layout/MainLayout';
  */
 const AppRoutes = () => {
   return (
+    <>
+    <ScrollToTop />
     <Routes>
       {/* 테스트 페이지 */}
       <Route path="/test" element={<TestPage />} />
@@ -58,6 +61,7 @@ const AppRoutes = () => {
       {/* 존재하지 않는 경로 처리 */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
+    </>
   );
 };
 
